@@ -1,0 +1,77 @@
+#version 430
+
+//-----------------------------------------------------------------------------------//
+// constants                                                                         //
+//-----------------------------------------------------------------------------------//
+const float PI = 3.14159265358;
+
+layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+layout(std430, binding = 0) buffer Velocityfield     { vec4 velocity[];     };
+layout(std430, binding = 1) buffer Accelerationfield { vec4 acceleration[]; };
+
+uniform vec2  viewDir;
+uniform float speed;
+uniform int   size;
+uniform int   dim;
+uniform int   dx;
+uniform int   dz;
+uniform float dt;
+uniform float t;
+
+void syncThreads() {
+    memoryBarrierShared();
+    barrier();
+}
+
+bool inBounds(int x, int z) {
+    return x >= 0 && x < dim && z >= 0 && z < dim;
+}
+vec4 getVelocity(int x, int z) {
+    vec4 vel = vec4(0, 0, 0, 0);
+    if(inBounds(x, z)) {
+        vel = velocity[z*dim + x];
+    }
+    return vel;
+}
+float time(float freq, float phase) {
+    return sin(phase + mod(t,freq)/(freq*0.5) * PI);
+}
+
+void main() {
+    // get index in global work group i.e x,y position
+    int idx = int(gl_GlobalInvocationID.x);
+    if (idx >= size) { return; }
+
+    // current cell
+    int x = idx % dim;
+    int z = idx / dim;
+
+    // new cell
+    int nx = x + dx;
+    int nz = z + dz;
+    int nidx = nz*dim + nx;
+
+    // calculate velocity
+    vec4 vel = vec4(0, 0, 0, 0);
+    if (nx >= 0 && nx < dim && nz >= 0 && nz < dim) {
+        vel = velocity[nidx]; 
+    }
+
+    // calculate acceleration
+    vec4 acc = acceleration[idx];
+    vec4 dir = normalize(acc);
+    if(length(acc) == 0.0) {
+        dir = vec4(0);
+    }
+    acc = clamp(dot(acc.xy, viewDir), 0, 1) * dir * speed;
+
+    // calc idle
+    float phase = nx+nz;
+    vec4 idle = vec4(1,1,0,0)*time(200, phase)*0.1;
+
+    // wait before writing back to prevent race conditions
+    syncThreads();
+
+    // euler integration
+    velocity[idx] = clamp(0.995*vel + acc*dt + idle, -50, 50);
+}
