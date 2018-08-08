@@ -1,6 +1,5 @@
-// Package engine provides an abstraction layer on top of OpenGL.
-// It contains entities relevant for rendering.
-package engine
+// Package texture provides classes for creating and storing images and textures.
+package texture
 
 import (
 	"unsafe"
@@ -13,6 +12,11 @@ type Texture struct {
 	handle uint32
 	target uint32
 	texPos uint32 // e.g. gl.TEXTURE0
+}
+
+// GetHandle returns the OpenGL of this texture.
+func (tex *Texture) GetHandle() uint32 {
+	return tex.handle
 }
 
 // MakeEmptyTexture creates a Texture with no image data.

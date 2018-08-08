@@ -1,6 +1,6 @@
 // Package engine provides an abstraction layer on top of OpenGL.
 // It contains entities relevant for rendering.
-package engine
+package core
 
 import (
 	"fmt"

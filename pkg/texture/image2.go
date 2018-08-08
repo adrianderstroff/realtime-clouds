@@ -1,8 +1,8 @@
-// Package engine provides an abstraction layer on top of OpenGL.
+// Package texture provides an abstraction layer on top of OpenGL.
 // It contains entities relevant for rendering.
-package engine
+package texture
 
-import (
+/* import (
 	"fmt"
 	"image"
 	"image/draw"
@@ -184,3 +184,4 @@ func (data *RawImageData) SetRGBA(x, y int32, r, g, b, a uint8) {
 func (data *RawImageData) getIdx(x, y int32) int32 {
 	return (y*data.width + x) * 4
 }
+*/

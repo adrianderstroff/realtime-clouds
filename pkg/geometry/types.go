@@ -1,10 +1,12 @@
+// Package geometry provides geometric primitives that can be used in meshes.
+// It also offers a way to create custom geometric shapes.
 package geometry
 
 // Alignment options for different vertex attribute layouts
 const (
-	ALIGN_MULTI_BATCH = 0	// having each attribute in a different slice (1111)(2222)(3333)
-	ALIGN_SINGLE_BATCH = 1	// having all attributes in one slice but batched (111122223333)
-	ALIGN_INTERLEAVED = 2	// having all attributes in one slice but interleaved (123123123123)
+	ALIGN_MULTI_BATCH  = 0 // having each attribute in a different slice (1111)(2222)(3333)
+	ALIGN_SINGLE_BATCH = 1 // having all attributes in one slice but batched (111122223333)
+	ALIGN_INTERLEAVED  = 2 // having all attributes in one slice but interleaved (123123123123)
 )
 
 // Geometry is a collection of vertex data and the way it's attributes are layed out.
@@ -17,14 +19,14 @@ const (
 // correspondings dataType and count. In the latter case there is only one
 // slice that has to be a length that is a multiple of all attributes dataTypes
 // and counts combined.
-type struct Geometry {
-	Layout []VertexAttribute
-	Data [][]byte
+type Geometry struct {
+	Layout    []VertexAttribute
+	Data      [][]float32
 	Alignment int
 }
 
 // MakeGeometry constructs a Geometry with it's layout and the data.
-func MakeGeometry(layout []VertexAttribute, data [][]byte) {
+func MakeGeometry(layout []VertexAttribute, data [][]float32) Geometry {
 	// determine alignment
 	alignment := ALIGN_MULTI_BATCH
 	if len(data) == 1 {
@@ -32,8 +34,8 @@ func MakeGeometry(layout []VertexAttribute, data [][]byte) {
 	}
 
 	return Geometry{
-		Layout: layout,
-		Data: data,
+		Layout:    layout,
+		Data:      data,
 		Alignment: alignment,
 	}
 }
@@ -42,24 +44,24 @@ func MakeGeometry(layout []VertexAttribute, data [][]byte) {
 // The id has to match the name of the vertex attribute used in the shader.
 // The glType is the type of one element of the vertex attribute to specify.
 // The count specifies of how many elements this vertex attribute consists of.
-// The usage is a hint to how the vertex data is going to be used. Allowed 
-// usage options are gl.STREAM_DRAW, gl.STREAM_READ, gl.STREAM_COPY, 
-// gl.STATIC_DRAW, gl.STATIC_READ, gl.STATIC_COPY, gl.DYNAMIC_DRAW, 
-// gl.DYNAMIC_READ, or gl.DYNAMIC_COPY. 
-type struct VertexAttribute {
-	Id string
+// The usage is a hint to how the vertex data is going to be used. Allowed
+// usage options are gl.STREAM_DRAW, gl.STREAM_READ, gl.STREAM_COPY,
+// gl.STATIC_DRAW, gl.STATIC_READ, gl.STATIC_COPY, gl.DYNAMIC_DRAW,
+// gl.DYNAMIC_READ, or gl.DYNAMIC_COPY.
+type VertexAttribute struct {
+	Id     string
 	GlType uint32
-	Count int32
-	Usage int32
+	Count  int32
+	Usage  int32
 }
 
 // VertexAttribute constructs a VertexAttribute with the given id, the type of one element, the number
 // of elements and the OpenGL usage option.
-func VertexAttribute(id string, glType uint32, count int32, usage int32) {
-	return VertexAttribute {
-		Id: id,
+func MakeVertexAttribute(id string, glType uint32, count int32, usage int32) VertexAttribute {
+	return VertexAttribute{
+		Id:     id,
 		GlType: glType,
-		Count: count,
-		Usage: usage,
+		Count:  count,
+		Usage:  usage,
 	}
 }

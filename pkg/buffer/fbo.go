@@ -4,6 +4,8 @@ package engine
 
 import (
 	"github.com/go-gl/gl/v4.3-core/gl"
+
+	tex "github.com/adrianderstroff/realtime-clouds/pkg/texture"
 )
 
 // FBO can hold multiple color textues and up to one depth texture.
@@ -11,8 +13,8 @@ import (
 type FBO struct {
 	handle        uint32
 	isBound       bool
-	ColorTextures []*Texture
-	DepthTexture  *Texture
+	ColorTextures []*tex.Texture
+	DepthTexture  *tex.Texture
 	textureType   uint32
 }
 
@@ -27,8 +29,8 @@ func MakeEmptyFBO() FBO {
 func MakeFBO(width, height int32) FBO {
 	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D}
 	gl.GenFramebuffers(1, &fbo.handle)
-	color := MakeColorTexture(width, height)
-	depth := MakeDepthTexture(width, height)
+	color := tex.MakeColorTexture(width, height)
+	depth := tex.MakeDepthTexture(width, height)
 	fbo.AttachColorTexture(color, 0)
 	fbo.AttachDepthTexture(depth)
 	return fbo
@@ -84,9 +86,9 @@ func (fbo *FBO) Unbind() {
 }
 
 // AttachColorTexture adds a color texture at the position specified by index.
-func (fbo *FBO) AttachColorTexture(texture Texture, index uint32) {
+func (fbo *FBO) AttachColorTexture(texture tex.Texture, index uint32) {
 	fbo.Bind()
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0+index, fbo.textureType, texture.handle, 0)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0+index, fbo.textureType, texture.GetHandle(), 0)
 	drawBuffers := []uint32{gl.COLOR_ATTACHMENT0}
 	gl.DrawBuffers(1, &drawBuffers[0])
 	fbo.Unbind()
@@ -95,9 +97,9 @@ func (fbo *FBO) AttachColorTexture(texture Texture, index uint32) {
 }
 
 // AttachDepthTexture adds a depth texture to the FBO.
-func (fbo *FBO) AttachDepthTexture(texture Texture) {
+func (fbo *FBO) AttachDepthTexture(texture tex.Texture) {
 	fbo.Bind()
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, fbo.textureType, texture.handle, 0)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, fbo.textureType, texture.GetHandle(), 0)
 	fbo.Unbind()
 	// add handle
 	fbo.DepthTexture = &texture
