@@ -76,12 +76,12 @@ func MakeCubeMapTexture(right, left, top, bottom, front, back string) (Texture, 
 	imagePaths := []string{right, left, top, bottom, front, back}
 	for i, path := range imagePaths {
 		target := gl.TEXTURE_CUBE_MAP_POSITIVE_X + uint32(i)
-		image, err := MakeImage(path)
+		image, err := MakeImageFromPath(path)
 		if err != nil {
 			return Texture{}, err
 		}
 		gl.TexImage2D(target, 0, image.internalFormat, image.width, image.height,
-			0, image.format, image.pixelType, image.data)
+			0, image.format, image.pixelType, image.GetDataPointer())
 	}
 
 	// format texture
@@ -99,13 +99,13 @@ func MakeCubeMapTexture(right, left, top, bottom, front, back string) (Texture, 
 
 // MakeTextureFromPath creates a texture with the image data specifed in path.
 func MakeTextureFromPath(path string) (Texture, error) {
-	image, err := MakeImage(path)
+	image, err := MakeImageFromPath(path)
 	if err != nil {
 		return Texture{}, err
 	}
 
 	return MakeTexture(image.width, image.height, image.internalFormat, image.format,
-		image.pixelType, image.data, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
+		image.pixelType, image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
 // MakeMultisampleTexture creates a multisample texture of the given width and height and the number of samples that should be used.
