@@ -28,21 +28,14 @@ func main() {
 
 	// setup opengl
 	title := "Real-time clouds"
-	windowManager, err := core.NewWindowManager(title, int(width), int(height))
-	if err != nil {
-		panic(err)
-	}
+	windowManager, _ := core.NewWindowManager(title, int(width), int(height))
 	defer windowManager.Close()
 
 	// make shader
-	shader, err := core.MakeProgram(SHADER_PATH+"/flat/flat.vert", SHADER_PATH+"/flat/flat.frag")
-	if err != nil {
-		panic(err)
-	}
+	shader, _ := core.MakeProgram(SHADER_PATH+"/flat/flat.vert", SHADER_PATH+"/flat/flat.frag")
 
 	// make mesh
-	mesh := mesh.MakeQuad(2, 2, 2, false, gl.TRIANGLES)
-	shader.AddRenderable(mesh)
+	shader.AddRenderable(mesh.MakeQuad(2, 2, 2, false, gl.TRIANGLES))
 
 	// make camera
 	camera := camera.MakeDefaultTrackballCamera(width, height, 10.0)
