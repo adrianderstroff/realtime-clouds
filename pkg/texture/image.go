@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"unsafe"
 
@@ -69,13 +71,34 @@ func MakeImageFromPath(path string) (Image, error) {
 		return Image{}, fmt.Errorf("Image not power of 2")
 	}
 
+	// get image dimensions
+	width := int32(rgba.Rect.Size().X)
+	height := int32(rgba.Rect.Size().Y)
+
+	// rearrange data by flipping the rows of the image
+	// this has to be done as the texture assumes the first row
+	// to be the bottom row and the last row at the top.
+	data := rgba.Pix
+	var tempdata []uint8
+	var row, col int32
+	for row = height - 1; row >= 0; row-- {
+		for col = 0; col < width; col++ {
+			idx := (row*width + col) * 4
+			tempdata = append(tempdata, data[idx])
+			tempdata = append(tempdata, data[idx+1])
+			tempdata = append(tempdata, data[idx+2])
+			tempdata = append(tempdata, data[idx+3])
+		}
+	}
+	data = tempdata
+
 	return Image{
 		format:         uint32(gl.RGBA),
 		internalFormat: int32(gl.RGBA),
-		width:          int32(rgba.Rect.Size().X),
-		height:         int32(rgba.Rect.Size().Y),
+		width:          width,
+		height:         height,
 		pixelType:      uint32(gl.UNSIGNED_BYTE),
-		data:           rgba.Pix,
+		data:           data,
 	}, nil
 }
 
@@ -172,6 +195,10 @@ func (image *Image) SetRGBA(x, y int32, r, g, b, a uint8) {
 }
 
 // getIdx turns the x and y indices into a 1D index.
+// The y coordinate is inverted as the first row of the
+// image is at the bottom and the last one at the top.
+// This reflects the way opengl interprets the pixel data
+// when uploading it into a texture.
 func (image *Image) getIdx(x, y int32) int32 {
-	return (y*image.width + x) * 4
+	return ((image.height-1-y)*image.width + x) * 4
 }

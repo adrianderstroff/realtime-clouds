@@ -70,12 +70,35 @@ func (mesh Mesh) Build(shaderProgramHandle uint32) {
 
 // Render draws the Mesh using the currently bound Shader.
 func (mesh Mesh) Render() {
+	// bind all textures in order
+	for i, texture := range mesh.textures {
+		texture.Bind(uint32(i))
+	}
+	// render geometry
 	mesh.vao.Render()
+	// unbind all textures
+	for _, texture := range mesh.textures {
+		texture.Unbind()
+	}
 }
 
 // RenderInstanced draws the Mesh multiple times specified by instancecount using the currently bound Shader.
 func (mesh Mesh) RenderInstanced(instancecount int32) {
+	// bind all textures in order
+	for i, texture := range mesh.textures {
+		texture.Bind(uint32(i))
+	}
+	// render geometry instanced
 	mesh.vao.RenderInstanced(instancecount)
+	// unbind all textures
+	for _, texture := range mesh.textures {
+		texture.Unbind()
+	}
+}
+
+// AddTexture adds a texture to the list of textures.
+func (mesh *Mesh) AddTexture(texture tex.Texture) {
+	mesh.textures = append(mesh.textures, texture)
 }
 
 // GetVAO returns a pointer to the VAO.

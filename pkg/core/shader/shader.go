@@ -1,4 +1,7 @@
-package core
+// Package shader provides a way to load shader programs, adding renderable
+// objects to the shader and updating values of the shader as well as
+// executing the shader.
+package shader
 
 import (
 	"fmt"
@@ -9,32 +12,32 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-// ShaderProgram represents a shader program object and contains all Renderables that share the same shader.
-type ShaderProgram struct {
+// Shader represents a shader program object and contains all Renderables that share the same shader.
+type Shader struct {
 	programHandle uint32
 	renderables   []Renderable
 }
 
-// MakeProgram contrusts a ShaderProgram that consists of a vertex and fragment shader.
-func MakeProgram(vertexShaderPath, fragmentShaderPath string) (ShaderProgram, error) {
+// MakeProgram contrusts a Shader that consists of a vertex and fragment shader.
+func Make(vertexShaderPath, fragmentShaderPath string) (Shader, error) {
 	// loads files
 	vertexShaderSource, err := loadFile(vertexShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
 	}
 	fragmentShaderSource, err := loadFile(fragmentShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
 	}
 
 	// compile shaders
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
 	}
 	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
 	}
 
 	// create and link program
@@ -52,7 +55,7 @@ func MakeProgram(vertexShaderPath, fragmentShaderPath string) (ShaderProgram, er
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 
-		return ShaderProgram{}, fmt.Errorf("failed to link program: %v", log)
+		return Shader{}, fmt.Errorf("failed to link program: %v", log)
 	}
 
 	gl.DetachShader(program, vertexShader)
@@ -60,38 +63,38 @@ func MakeProgram(vertexShaderPath, fragmentShaderPath string) (ShaderProgram, er
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
-	shaderProgram := ShaderProgram{program, nil}
+	shaderProgram := Shader{program, nil}
 	return shaderProgram, nil
 }
 
-// MakeGeomProgram contrusts a ShaderProgram that consists of a vertex, geometry and fragment shader.
-func MakeGeomProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath string) (ShaderProgram, error) {
+// MakeGeomProgram contrusts a Shader that consists of a vertex, geometry and fragment shader.
+func MakeGeom(vertexShaderPath, geometryShaderPath, fragmentShaderPath string) (Shader, error) {
 	// loads files
 	vertexShaderSource, err := loadFile(vertexShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
 	}
 	geometryShaderSource, err := loadFile(geometryShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", geometryShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", geometryShaderPath, err)
 	}
 	fragmentShaderSource, err := loadFile(fragmentShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
 	}
 
 	// compile shaders
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", vertexShaderPath, err)
 	}
 	geometryShader, err := compileShader(geometryShaderSource, gl.GEOMETRY_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", geometryShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", geometryShaderPath, err)
 	}
 	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", fragmentShaderPath, err)
 	}
 
 	// create and link program
@@ -110,7 +113,7 @@ func MakeGeomProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath st
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 
-		return ShaderProgram{}, fmt.Errorf("failed to link program: %v", log)
+		return Shader{}, fmt.Errorf("failed to link program: %v", log)
 	}
 
 	gl.DetachShader(program, vertexShader)
@@ -120,22 +123,22 @@ func MakeGeomProgram(vertexShaderPath, geometryShaderPath, fragmentShaderPath st
 	gl.DeleteShader(geometryShader)
 	gl.DeleteShader(fragmentShader)
 
-	shaderProgram := ShaderProgram{program, nil}
+	shaderProgram := Shader{program, nil}
 	return shaderProgram, nil
 }
 
-// MakeComputeProgram contrusts a ShaderProgram that consists of a compute shader.
-func MakeComputeProgram(computeShaderPath string) (ShaderProgram, error) {
+// MakeComputeProgram contrusts a Shader that consists of a compute shader.
+func MakeCompute(computeShaderPath string) (Shader, error) {
 	// loads files
 	computeShaderSource, err := loadFile(computeShaderPath)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", computeShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", computeShaderPath, err)
 	}
 
 	// compile shaders
 	computeShader, err := compileShader(computeShaderSource, gl.COMPUTE_SHADER)
 	if err != nil {
-		return ShaderProgram{}, fmt.Errorf("Error on: %v\n%v", computeShaderPath, err)
+		return Shader{}, fmt.Errorf("Error on: %v\n%v", computeShaderPath, err)
 	}
 
 	// create and link program
@@ -153,39 +156,39 @@ func MakeComputeProgram(computeShaderPath string) (ShaderProgram, error) {
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 
-		return ShaderProgram{}, fmt.Errorf("failed to link program: %v", log)
+		return Shader{}, fmt.Errorf("failed to link program: %v", log)
 	}
 
 	// cleanup shader objects
 	gl.DetachShader(program, computeShader)
 	gl.DeleteShader(computeShader)
 
-	shaderProgram := ShaderProgram{program, nil}
+	shaderProgram := Shader{program, nil}
 	return shaderProgram, nil
 }
 
 // AddRenderable adds a Rendereable to the slices of Renderables that should be rendered.
-func (shaderProgram *ShaderProgram) AddRenderable(renderable Renderable) {
-	renderable.Build(shaderProgram.programHandle)
-	shaderProgram.renderables = append(shaderProgram.renderables, renderable)
+func (shader *Shader) AddRenderable(renderable Renderable) {
+	renderable.Build(shader.programHandle)
+	shader.renderables = append(shader.renderables, renderable)
 }
 
 // RemoveAllRenderables removes all Renderables.
-func (ShaderProgram *ShaderProgram) RemoveAllRenderables() {
+func (Shader *Shader) RemoveAllRenderables() {
 	// TODO: should renderables be deleted?
-	ShaderProgram.renderables = nil
+	Shader.renderables = nil
 }
 
-// Render draws all Renderables that had been added to this ShaderProgram.
-func (shaderProgram *ShaderProgram) Render() {
-	for _, renderable := range shaderProgram.renderables {
+// Render draws all Renderables that had been added to this Shader.
+func (shader *Shader) Render() {
+	for _, renderable := range shader.renderables {
 		renderable.Render()
 	}
 }
 
 // RenderInstances draws all Renderables each multiple times defined by instancecount.
-func (shaderProgram *ShaderProgram) RenderInstanced(instancecount int32) {
-	for _, renderable := range shaderProgram.renderables {
+func (shader *Shader) RenderInstanced(instancecount int32) {
+	for _, renderable := range shader.renderables {
 		renderable.RenderInstanced(instancecount)
 	}
 }
@@ -193,64 +196,64 @@ func (shaderProgram *ShaderProgram) RenderInstanced(instancecount int32) {
 // Compute needs to be called when the shader is a compute shader.
 // The group sizes of the compute shader have to specified in the x,y and z dimension.
 // The dimensions need to be > 1.
-func (ShaderProgram *ShaderProgram) Compute(numgroupsx, numgroupsy, numgroupsz uint32) {
+func (shader *Shader) Compute(numgroupsx, numgroupsy, numgroupsz uint32) {
 	gl.DispatchCompute(numgroupsx, numgroupsy, numgroupsz)
 }
 
 // Use binds the shader for rendering. Call it before calling Render.
-func (shaderProgram *ShaderProgram) Use() {
-	gl.UseProgram(shaderProgram.programHandle)
+func (shader *Shader) Use() {
+	gl.UseProgram(shader.programHandle)
 }
 
-// Delete deletes the OpenGL ShaderProgram handle.
-func (shaderProgram *ShaderProgram) Delete() {
-	gl.DeleteProgram(shaderProgram.programHandle)
-	shaderProgram.renderables = nil
+// Delete deletes the OpenGL Shader handle.
+func (shader *Shader) Delete() {
+	gl.DeleteProgram(shader.programHandle)
+	shader.renderables = nil
 }
 
 // UpdateInt32 updates the value of an 32bit int in the shader.
-func (shaderProgram *ShaderProgram) UpdateInt32(uniformName string, i32 int32) {
-	location := gl.GetUniformLocation(shaderProgram.programHandle, gl.Str(uniformName+"\x00"))
+func (shader *Shader) UpdateInt32(uniformName string, i32 int32) {
+	location := gl.GetUniformLocation(shader.programHandle, gl.Str(uniformName+"\x00"))
 	if location != -1 {
 		gl.Uniform1i(location, i32)
 	}
 }
 
 // UpdateInt32 updates the value of an 32bit float in the shader.
-func (shaderProgram *ShaderProgram) UpdateFloat32(uniformName string, f32 float32) {
-	location := gl.GetUniformLocation(shaderProgram.programHandle, gl.Str(uniformName+"\x00"))
+func (shader *Shader) UpdateFloat32(uniformName string, f32 float32) {
+	location := gl.GetUniformLocation(shader.programHandle, gl.Str(uniformName+"\x00"))
 	if location != -1 {
 		gl.Uniform1f(location, f32)
 	}
 }
 
 // UpdateInt32 updates the value of an vec2 in the shader.
-func (shaderProgram *ShaderProgram) UpdateVec2(uniformName string, vec2 mgl32.Vec2) {
-	location := gl.GetUniformLocation(shaderProgram.programHandle, gl.Str(uniformName+"\x00"))
+func (shader *Shader) UpdateVec2(uniformName string, vec2 mgl32.Vec2) {
+	location := gl.GetUniformLocation(shader.programHandle, gl.Str(uniformName+"\x00"))
 	if location != -1 {
 		gl.Uniform2fv(location, 1, &vec2[0])
 	}
 }
 
 // UpdateInt32 updates the value of an vec3 in the shader.
-func (shaderProgram *ShaderProgram) UpdateVec3(uniformName string, vec3 mgl32.Vec3) {
-	location := gl.GetUniformLocation(shaderProgram.programHandle, gl.Str(uniformName+"\x00"))
+func (shader *Shader) UpdateVec3(uniformName string, vec3 mgl32.Vec3) {
+	location := gl.GetUniformLocation(shader.programHandle, gl.Str(uniformName+"\x00"))
 	if location != -1 {
 		gl.Uniform3fv(location, 1, &vec3[0])
 	}
 }
 
 // UpdateInt32 updates the value of an mat4 in the shader.
-func (shaderProgram *ShaderProgram) UpdateMat4(uniformName string, mat mgl32.Mat4) {
-	location := gl.GetUniformLocation(shaderProgram.programHandle, gl.Str(uniformName+"\x00"))
+func (shader *Shader) UpdateMat4(uniformName string, mat mgl32.Mat4) {
+	location := gl.GetUniformLocation(shader.programHandle, gl.Str(uniformName+"\x00"))
 	if location != -1 {
 		gl.UniformMatrix4fv(location, 1, false, &mat[0])
 	}
 }
 
-// Returns a handle to the ShaderProgram.
-func (shaderProgram *ShaderProgram) GetHandle() uint32 {
-	return shaderProgram.programHandle
+// Returns a handle to the Shader.
+func (shader *Shader) GetHandle() uint32 {
+	return shader.programHandle
 }
 
 // loadFile returns the contents of a file as a zero terminated string.

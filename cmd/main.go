@@ -10,6 +10,7 @@ import (
 	"github.com/adrianderstroff/realtime-clouds/pkg/core"
 	"github.com/adrianderstroff/realtime-clouds/pkg/mesh"
 	"github.com/adrianderstroff/realtime-clouds/pkg/scene/camera"
+	tex "github.com/adrianderstroff/realtime-clouds/pkg/texture"
 )
 
 const (
@@ -32,10 +33,14 @@ func main() {
 	defer windowManager.Close()
 
 	// make shader
-	shader, _ := core.MakeProgram(SHADER_PATH+"/flat/flat.vert", SHADER_PATH+"/flat/flat.frag")
+	shader, _ := core.MakeProgram(SHADER_PATH+"/texture/texture.vert", SHADER_PATH+"/texture/texture.frag")
 
 	// make mesh
-	shader.AddRenderable(mesh.MakeQuad(2, 2, 2, false, gl.TRIANGLES))
+	mesh := mesh.MakeQuad(2, 2, 2, false, gl.TRIANGLES)
+	texture, _ := tex.MakeTextureFromPath(TEX_PATH + "/profile.png")
+	texture.GenMipmap()
+	mesh.AddTexture(texture)
+	shader.AddRenderable(mesh)
 
 	// make camera
 	camera := camera.MakeDefaultTrackballCamera(width, height, 10.0)

@@ -108,6 +108,12 @@ func MakeTextureFromPath(path string) (Texture, error) {
 		image.pixelType, image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
+// MakeTextureFromImage grabs the dimensions and information from the image
+func MakeTextureFromImage(image *Image) Texture {
+	return MakeTexture(image.width, image.height, image.internalFormat, image.format,
+		image.pixelType, image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+}
+
 // MakeMultisampleTexture creates a multisample texture of the given width and height and the number of samples that should be used.
 // Internalformat, format and pixelType specifed the layout of the data.
 // Data is pointing to the data that is going to be uploaded.
