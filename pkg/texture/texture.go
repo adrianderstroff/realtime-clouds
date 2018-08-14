@@ -4,7 +4,7 @@ package texture
 import (
 	"unsafe"
 
-	"github.com/go-gl/gl/v4.3-core/gl"
+	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 )
 
 // Texture holds no to several images.

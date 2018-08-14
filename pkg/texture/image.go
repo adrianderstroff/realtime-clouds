@@ -10,7 +10,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/go-gl/gl/v4.3-core/gl"
+	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 )
 
 // Image stores the dimensions, data format and it's pixel data.
