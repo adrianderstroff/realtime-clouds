@@ -5,6 +5,7 @@ import (
 	"unsafe"
 
 	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
+	image "github.com/adrianderstroff/realtime-clouds/pkg/view/image"
 )
 
 // Texture holds no to several images.
@@ -20,16 +21,16 @@ func (tex *Texture) GetHandle() uint32 {
 }
 
 // MakeEmptyTexture creates a Texture with no image data.
-func MakeEmptyTexture() Texture {
+func MakeEmpty() Texture {
 	return Texture{0, gl.TEXTURE_2D, 0}
 }
 
-// MakeTexture creates a texture the given width and height.
+// Make creates a texture the given width and height.
 // Internalformat, format and pixelType specifed the layout of the data.
 // Data is pointing to the data that is going to be uploaded.
 // Min and mag specify the behaviour when down and upscaling the texture.
 // S and t specify the behaviour at the borders of the image.
-func MakeTexture(width, height, internalformat int32, format, pixelType uint32, data unsafe.Pointer, min, mag, s, t int32) Texture {
+func Make(width, height, internalformat int32, format, pixelType uint32, data unsafe.Pointer, min, mag, s, t int32) Texture {
 	texture := Texture{0, gl.TEXTURE_2D, 0}
 
 	// generate and bind texture
@@ -52,20 +53,20 @@ func MakeTexture(width, height, internalformat int32, format, pixelType uint32, 
 }
 
 // MakeColorTexture creates a color texture of the specified size.
-func MakeColorTexture(width, height int32) Texture {
-	return MakeTexture(width, height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, nil,
+func MakeColor(width, height int32) Texture {
+	return Make(width, height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, nil,
 		gl.LINEAR, gl.LINEAR, gl.CLAMP_TO_BORDER, gl.CLAMP_TO_BORDER)
 }
 
 // MakeDepthTexture creates a depth texture of the specfied size.
-func MakeDepthTexture(width, height int32) Texture {
-	tex := MakeTexture(width, height, gl.DEPTH_COMPONENT, gl.DEPTH_COMPONENT, gl.UNSIGNED_BYTE, nil,
+func MakeDepth(width, height int32) Texture {
+	tex := Make(width, height, gl.DEPTH_COMPONENT, gl.DEPTH_COMPONENT, gl.UNSIGNED_BYTE, nil,
 		gl.LINEAR, gl.LINEAR, gl.CLAMP_TO_BORDER, gl.CLAMP_TO_BORDER)
 	return tex
 }
 
 // MakeCupeMapTexture creates a cube map with the images specfied from the path.
-func MakeCubeMapTexture(right, left, top, bottom, front, back string) (Texture, error) {
+func MakeCubeMap(right, left, top, bottom, front, back string) (Texture, error) {
 	tex := Texture{0, gl.TEXTURE_CUBE_MAP, 0}
 
 	// generate cube map texture
@@ -76,12 +77,12 @@ func MakeCubeMapTexture(right, left, top, bottom, front, back string) (Texture, 
 	imagePaths := []string{right, left, top, bottom, front, back}
 	for i, path := range imagePaths {
 		target := gl.TEXTURE_CUBE_MAP_POSITIVE_X + uint32(i)
-		image, err := MakeImageFromPath(path)
+		image, err := image.MakeFromPath(path)
 		if err != nil {
 			return Texture{}, err
 		}
-		gl.TexImage2D(target, 0, image.internalFormat, image.width, image.height,
-			0, image.format, image.pixelType, image.GetDataPointer())
+		gl.TexImage2D(target, 0, image.GetInternalFormat(), image.GetWidth(), image.GetHeight(),
+			0, image.GetFormat(), image.GetPixelType(), image.GetDataPointer())
 	}
 
 	// format texture
@@ -97,21 +98,21 @@ func MakeCubeMapTexture(right, left, top, bottom, front, back string) (Texture, 
 	return tex, nil
 }
 
-// MakeTextureFromPath creates a texture with the image data specifed in path.
-func MakeTextureFromPath(path string) (Texture, error) {
-	image, err := MakeImageFromPath(path)
+// MakeFromPath creates a texture with the image data specifed in path.
+func MakeFromPath(path string) (Texture, error) {
+	image, err := image.MakeFromPath(path)
 	if err != nil {
 		return Texture{}, err
 	}
 
-	return MakeTexture(image.width, image.height, image.internalFormat, image.format,
-		image.pixelType, image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
+	return Make(image.GetWidth(), image.GetHeight(), image.GetInternalFormat(), image.GetFormat(),
+		image.GetPixelType(), image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
-// MakeTextureFromImage grabs the dimensions and information from the image
-func MakeTextureFromImage(image *Image) Texture {
-	return MakeTexture(image.width, image.height, image.internalFormat, image.format,
-		image.pixelType, image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+// MakeFromImage grabs the dimensions and information from the image
+func MakeFromImage(image *image.Image) Texture {
+	return Make(image.GetWidth(), image.GetHeight(), image.GetInternalFormat(), image.GetFormat(),
+		image.GetPixelType(), image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 }
 
 // MakeMultisampleTexture creates a multisample texture of the given width and height and the number of samples that should be used.
@@ -119,7 +120,7 @@ func MakeTextureFromImage(image *Image) Texture {
 // Data is pointing to the data that is going to be uploaded.
 // Min and mag specify the behaviour when down and upscaling the texture.
 // S and t specify the behaviour at the borders of the image.
-func MakeMultisampleTexture(width, height, samples int32, format uint32, min, mag, s, t int32) Texture {
+func MakeMultisample(width, height, samples int32, format uint32, min, mag, s, t int32) Texture {
 	texture := Texture{0, gl.TEXTURE_2D_MULTISAMPLE, 0}
 
 	// generate and bind texture
@@ -142,14 +143,14 @@ func MakeMultisampleTexture(width, height, samples int32, format uint32, min, ma
 }
 
 // MakeColorMultisampleTexture creates a multisample color texture of the given width and height and the number of samples that should be used.
-func MakeColorMultisampleTexture(width, height, samples int32) Texture {
-	return MakeMultisampleTexture(width, height, samples, gl.RGBA,
+func MakeColorMultisample(width, height, samples int32) Texture {
+	return MakeMultisample(width, height, samples, gl.RGBA,
 		gl.LINEAR, gl.LINEAR, gl.CLAMP_TO_BORDER, gl.CLAMP_TO_BORDER)
 }
 
 // MakeDepthMultisampleTexture creates a multisample depth texture of the given width and height and the number of samples that should be used.
-func MakeDepthMultisampleTexture(width, height, samples int32) Texture {
-	return MakeMultisampleTexture(width, height, samples, gl.DEPTH_COMPONENT,
+func MakeDepthMultisample(width, height, samples int32) Texture {
+	return MakeMultisample(width, height, samples, gl.DEPTH_COMPONENT,
 		gl.LINEAR, gl.LINEAR, gl.CLAMP_TO_BORDER, gl.CLAMP_TO_BORDER)
 }
 

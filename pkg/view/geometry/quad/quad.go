@@ -3,12 +3,13 @@
 package geometry
 
 import (
-	"github.com/go-gl/gl/v4.3-core/gl"
+	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
+	geometry "github.com/adrianderstroff/realtime-clouds/pkg/view/geometry"
 )
 
 // MakeQuad creates a Quad with the specified width, height and depth.
 // If the normals should be inside the quad the inside parameter should be true.
-func MakeQuad(width, height, depth float32, inside bool) Geometry {
+func MakeQuad(width, height, depth float32, inside bool) geometry.Geometry {
 	// half side lengths
 	halfWidth := width / 2.0
 	halfHeight := height / 2.0
@@ -23,7 +24,7 @@ func MakeQuad(width, height, depth float32, inside bool) Geometry {
 	v6 := []float32{-halfWidth, -halfHeight, -halfDepth}
 	v7 := []float32{halfWidth, halfHeight, -halfDepth}
 	v8 := []float32{halfWidth, -halfHeight, -halfDepth}
-	positions := combine(
+	positions := geometry.Combine(
 		// front
 		v1, v2, v3,
 		v3, v2, v4,
@@ -48,7 +49,7 @@ func MakeQuad(width, height, depth float32, inside bool) Geometry {
 	t2 := []float32{0.0, 0.0}
 	t3 := []float32{1.0, 1.0}
 	t4 := []float32{1.0, 0.0}
-	uvs := repeat(combine(t1, t2, t3, t3, t2, t4), 6)
+	uvs := geometry.Repeat(geometry.Combine(t1, t2, t3, t3, t2, t4), 6)
 
 	// normals
 	right := []float32{1.0, 0.0, 0.0}
@@ -63,13 +64,13 @@ func MakeQuad(width, height, depth float32, inside bool) Geometry {
 		top, bottom = bottom, top
 		front, back = back, front
 	}
-	normals := combine(
-		repeat(bottom, 6),
-		repeat(top, 6),
-		repeat(left, 6),
-		repeat(right, 6),
-		repeat(front, 6),
-		repeat(back, 6),
+	normals := geometry.Combine(
+		geometry.Repeat(bottom, 6),
+		geometry.Repeat(top, 6),
+		geometry.Repeat(left, 6),
+		geometry.Repeat(right, 6),
+		geometry.Repeat(front, 6),
+		geometry.Repeat(back, 6),
 	)
 
 	// setup data
@@ -80,11 +81,11 @@ func MakeQuad(width, height, depth float32, inside bool) Geometry {
 	}
 
 	// setup layout
-	layout := []VertexAttribute{
-		MakeVertexAttribute("pos", gl.FLOAT, 3, gl.STATIC_DRAW),
-		MakeVertexAttribute("uv", gl.FLOAT, 2, gl.STATIC_DRAW),
-		MakeVertexAttribute("normal", gl.FLOAT, 3, gl.STATIC_DRAW),
+	layout := []geometry.VertexAttribute{
+		geometry.MakeVertexAttribute("pos", gl.FLOAT, 3, gl.STATIC_DRAW),
+		geometry.MakeVertexAttribute("uv", gl.FLOAT, 2, gl.STATIC_DRAW),
+		geometry.MakeVertexAttribute("normal", gl.FLOAT, 3, gl.STATIC_DRAW),
 	}
 
-	return MakeGeometry(layout, data)
+	return geometry.Make(layout, data)
 }

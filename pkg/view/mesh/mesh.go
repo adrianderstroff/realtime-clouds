@@ -4,8 +4,8 @@ package mesh
 
 import (
 	buf "github.com/adrianderstroff/realtime-clouds/pkg/buffer"
-	geom "github.com/adrianderstroff/realtime-clouds/pkg/geometry"
 	tex "github.com/adrianderstroff/realtime-clouds/pkg/texture"
+	geom "github.com/adrianderstroff/realtime-clouds/pkg/view/geometry"
 )
 
 // Mesh holds geometry data and textures that should be used to render this object.

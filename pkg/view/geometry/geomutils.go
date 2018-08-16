@@ -3,7 +3,7 @@
 package geometry
 
 // combine merges multiple slices into one
-func combine(slices ...[]float32) []float32 {
+func Combine(slices ...[]float32) []float32 {
 	var result []float32
 	for _, s := range slices {
 		result = append(result, s...)
@@ -12,7 +12,7 @@ func combine(slices ...[]float32) []float32 {
 }
 
 // repeat creates a slice that consists of the provided slices multiple times repeated.
-func repeat(slice []float32, number int) []float32 {
+func Repeat(slice []float32, number int) []float32 {
 	var result []float32
 	for i := 0; i < number; i++ {
 		result = append(result, slice...)

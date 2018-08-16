@@ -3,9 +3,8 @@
 package engine
 
 import (
-	"github.com/go-gl/gl/v4.3-core/gl"
-
-	tex "github.com/adrianderstroff/realtime-clouds/pkg/texture"
+	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
+	tex "github.com/adrianderstroff/realtime-clouds/pkg/view/texture"
 )
 
 // FBO can hold multiple color textues and up to one depth texture.
@@ -29,8 +28,8 @@ func MakeEmptyFBO() FBO {
 func MakeFBO(width, height int32) FBO {
 	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D}
 	gl.GenFramebuffers(1, &fbo.handle)
-	color := tex.MakeColorTexture(width, height)
-	depth := tex.MakeDepthTexture(width, height)
+	color := tex.MakeColor(width, height)
+	depth := tex.MakeDepth(width, height)
 	fbo.AttachColorTexture(color, 0)
 	fbo.AttachDepthTexture(depth)
 	return fbo

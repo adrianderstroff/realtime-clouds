@@ -26,7 +26,7 @@ type Geometry struct {
 }
 
 // MakeGeometry constructs a Geometry with it's layout and the data.
-func MakeGeometry(layout []VertexAttribute, data [][]float32) Geometry {
+func Make(layout []VertexAttribute, data [][]float32) Geometry {
 	// determine alignment
 	alignment := ALIGN_MULTI_BATCH
 	if len(data) == 1 {

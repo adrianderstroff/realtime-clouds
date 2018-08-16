@@ -26,7 +26,7 @@ type Image struct {
 }
 
 // MakeImage constructs an image of the specified width and height and with all pixels set to the specified rgba value.
-func MakeImage(width, height int32, r, g, b, a uint8) (Image, error) {
+func Make(width, height int32, r, g, b, a uint8) (Image, error) {
 	// create image data
 	var data []uint8
 	length := width * height
@@ -50,7 +50,7 @@ func MakeImage(width, height int32, r, g, b, a uint8) (Image, error) {
 
 // MakeImageFromPath constructs the image data from the specified path.
 // If there is no image at the specified path an error is returned instead.
-func MakeImageFromPath(path string) (Image, error) {
+func MakeFromPath(path string) (Image, error) {
 	// load image file
 	file, err := os.Open(path)
 	if err != nil {
@@ -102,9 +102,14 @@ func MakeImageFromPath(path string) (Image, error) {
 	}, nil
 }
 
-// GetDataPointer returns an pointer to the beginning of the image data.
-func (image *Image) GetDataPointer() unsafe.Pointer {
-	return gl.Ptr(image.data)
+// GetFormat gets the format of the pixel data.
+func (image *Image) GetFormat() uint32 {
+	return image.format
+}
+
+// GetInternalFormat gets the number of color components in the texture
+func (image *Image) GetInternalFormat() int32 {
+	return image.internalFormat
 }
 
 // GetWidth returns the width of the image.
@@ -115,6 +120,16 @@ func (image *Image) GetWidth() int32 {
 // GetHeight returns the height of the image.
 func (image *Image) GetHeight() int32 {
 	return image.height
+}
+
+// GetPixelType gets the data type of the pixel data.
+func (image *Image) GetPixelType() uint32 {
+	return image.pixelType
+}
+
+// GetDataPointer returns an pointer to the beginning of the image data.
+func (image *Image) GetDataPointer() unsafe.Pointer {
+	return gl.Ptr(image.data)
 }
 
 // GetR returns the red value of the pixel at (x,y).

@@ -26,9 +26,9 @@ type FPSCamera struct {
 	Far    float32
 }
 
-// MakeFPSCamera creates a FPSCamera with the viewport of width and height and a radius from the origin.
+// Make creates a FPSCamera with the viewport of width and height and a radius from the origin.
 // It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
-func MakeFPSCamera(width, height int, pos mgl32.Vec3, speed, fov, near, far float32) FPSCamera {
+func Make(width, height int, pos mgl32.Vec3, speed, fov, near, far float32) FPSCamera {
 	dir := mgl32.Vec3{0.0, 0.0, 1.0}
 	camera := FPSCamera{
 		width:  width,
@@ -51,10 +51,10 @@ func MakeFPSCamera(width, height int, pos mgl32.Vec3, speed, fov, near, far floa
 	return camera
 }
 
-// NewDefaultFPSCamera creates a reference to a FPSCamera with the viewport of width and height and a radius from the origin.
+// New creates a reference to a FPSCamera with the viewport of width and height and a radius from the origin.
 // It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
-func NewFPSCamera(width, height int, pos mgl32.Vec3, speed, fov, near, far float32) *FPSCamera {
-	camera := MakeFPSCamera(width, height, pos, speed, fov, near, far)
+func New(width, height int, pos mgl32.Vec3, speed, fov, near, far float32) *FPSCamera {
+	camera := Make(width, height, pos, speed, fov, near, far)
 	return &camera
 }
 
