@@ -25,7 +25,7 @@ type Geometry struct {
 	Alignment int
 }
 
-// MakeGeometry constructs a Geometry with it's layout and the data.
+// Make constructs a Geometry with it's layout and the data.
 func Make(layout []VertexAttribute, data [][]float32) Geometry {
 	// determine alignment
 	alignment := ALIGN_MULTI_BATCH
@@ -38,6 +38,12 @@ func Make(layout []VertexAttribute, data [][]float32) Geometry {
 		Data:      data,
 		Alignment: alignment,
 	}
+}
+
+// New constructs a reference to Geometry with it's layout and the data.
+func New(layout []VertexAttribute, data [][]float32) *Geometry {
+	geometry := Make(layout, data)
+	return &geometry
 }
 
 // VertexAttribute specifies the layout of one vertex attribute.

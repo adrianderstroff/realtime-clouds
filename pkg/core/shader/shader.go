@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/go-gl/gl/v4.3-core/gl"
+	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
 

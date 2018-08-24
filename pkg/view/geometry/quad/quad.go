@@ -1,6 +1,6 @@
 // Package geometry provides geometric primitives that can be used in meshes.
 // It also offers a way to create custom geometric shapes.
-package geometry
+package quad
 
 import (
 	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
@@ -9,7 +9,7 @@ import (
 
 // MakeQuad creates a Quad with the specified width, height and depth.
 // If the normals should be inside the quad the inside parameter should be true.
-func MakeQuad(width, height, depth float32, inside bool) geometry.Geometry {
+func Make(width, height, depth float32, inside bool) geometry.Geometry {
 	// half side lengths
 	halfWidth := width / 2.0
 	halfHeight := height / 2.0
@@ -25,25 +25,48 @@ func MakeQuad(width, height, depth float32, inside bool) geometry.Geometry {
 	v7 := []float32{halfWidth, halfHeight, -halfDepth}
 	v8 := []float32{halfWidth, -halfHeight, -halfDepth}
 	positions := geometry.Combine(
-		// front
-		v1, v2, v3,
-		v3, v2, v4,
-		// back
-		v7, v8, v5,
-		v5, v8, v6,
-		// left
-		v5, v6, v1,
-		v1, v6, v2,
 		// right
 		v3, v4, v7,
 		v7, v4, v8,
+		// left
+		v5, v6, v1,
+		v1, v6, v2,
 		// top
 		v5, v1, v7,
 		v7, v1, v3,
 		// bottom
 		v2, v6, v4,
 		v4, v6, v8,
+		// front
+		v1, v2, v3,
+		v3, v2, v4,
+		// back
+		v7, v8, v5,
+		v5, v8, v6,
 	)
+	if inside {
+		positions = geometry.Combine(
+			// right
+			v7, v8, v3,
+			v3, v8, v4,
+			// left
+			v1, v2, v5,
+			v5, v2, v6,
+			// top
+			v7, v3, v5,
+			v5, v3, v1,
+			// bottom
+			v4, v8, v2,
+			v2, v8, v6,
+			// front
+			v3, v4, v1,
+			v1, v4, v2,
+			//back
+			v5, v6, v7,
+			v7, v6, v8,
+		)
+	}
+
 	// tex coordinates
 	t1 := []float32{0.0, 1.0}
 	t2 := []float32{0.0, 0.0}
@@ -65,10 +88,10 @@ func MakeQuad(width, height, depth float32, inside bool) geometry.Geometry {
 		front, back = back, front
 	}
 	normals := geometry.Combine(
-		geometry.Repeat(bottom, 6),
-		geometry.Repeat(top, 6),
-		geometry.Repeat(left, 6),
 		geometry.Repeat(right, 6),
+		geometry.Repeat(left, 6),
+		geometry.Repeat(top, 6),
+		geometry.Repeat(bottom, 6),
 		geometry.Repeat(front, 6),
 		geometry.Repeat(back, 6),
 	)

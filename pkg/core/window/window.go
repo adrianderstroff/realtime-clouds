@@ -3,6 +3,7 @@
 package core
 
 import (
+	"strconv"
 	"time"
 
 	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
@@ -99,6 +100,11 @@ func (window *Window) LockFPS(fps float64) {
 // GetFPS returns the fps of the previous frame.
 func (window *Window) GetFPS() float64 {
 	return window.lastFps
+}
+
+// GetFPSFormatted returns the fps as formatted string.
+func (window *Window) GetFPSFormatted() string {
+	return strconv.FormatFloat(window.GetFPS(), 'f', 0, 64) + "FPS"
 }
 
 // SetTitle updates the window title.

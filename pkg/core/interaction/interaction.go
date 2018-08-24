@@ -43,7 +43,7 @@ type MouseScrollHandler func(float64, float64) bool
 type KeyPressHandler func(int, int, int) bool
 
 // Make constructs an Interaction and registers all necessary handlers for the window.
-func Make(window *window.Window) Interaction {
+func New(window *window.Window) *Interaction {
 	// construct Interaction
 	interaction := Interaction{
 		ctx: window,
@@ -63,7 +63,7 @@ func Make(window *window.Window) Interaction {
 	window.Window.SetScrollCallback(interaction.onMouseScroll)
 	window.Window.SetKeyCallback(interaction.onKeyPress)
 
-	return interaction
+	return &interaction
 }
 
 // EnableCursorLoop hides the cursor and loops it inside the window in x and y direction.

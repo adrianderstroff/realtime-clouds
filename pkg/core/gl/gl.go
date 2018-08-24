@@ -19,6 +19,9 @@ func Init() error {
 	version := ogl.GoStr(ogl.GetString(ogl.VERSION))
 	fmt.Println("OpenGL version", version)
 
+	// setup state map
+	state = make(map[uint32]bool)
+
 	// set clear color
 	Enable(DEPTH_TEST)
 	FrontFace(CCW)
@@ -33,7 +36,7 @@ func Init() error {
 // If the state of this value is already true then nothing happens.
 func Enable(val uint32) {
 	// check if the state is already true
-	if state, ok := state[val]; ok && state == true {
+	if s, ok := state[val]; ok && s == true {
 		return
 	}
 
@@ -46,7 +49,7 @@ func Enable(val uint32) {
 // If the state of this value is already false then nothing happens.
 func Disable(val uint32) {
 	// check if the state is already false
-	if state, ok := state[val]; ok && state == false {
+	if s, ok := state[val]; ok && s == false {
 		return
 	}
 
@@ -89,38 +92,82 @@ func GetError() error {
 
 // Functions adapted from go-gl
 var (
-	Ptr                    = ogl.Ptr
-	Clear                  = ogl.Clear
-	ClearColor             = ogl.ClearColor
-	FrontFace              = ogl.FrontFace
-	CullFace               = ogl.CullFace
-	DepthFunc              = ogl.DepthFunc
-	GenTextures            = ogl.GenTextures
-	DeleteTextures         = ogl.DeleteTextures
-	BindTexture            = ogl.BindTexture
-	BindImageTexture       = ogl.BindImageTexture
-	ActiveTexture          = ogl.ActiveTexture
-	TexParameteri          = ogl.TexParameteri
-	TexParameteriv         = ogl.TexParameteriv
-	TexParameterf          = ogl.TexParameterf
-	TexParameterfv         = ogl.TexParameterfv
-	TexParameterIiv        = ogl.TexParameterIiv
-	TexParameterIuiv       = ogl.TexParameterIuiv
-	TexImage1D             = ogl.TexImage1D
-	TexImage2D             = ogl.TexImage2D
-	TexImage3D             = ogl.TexImage3D
-	TexImage2DMultisample  = ogl.TexImage2DMultisample
-	TexImage3DMultisample  = ogl.TexImage3DMultisample
-	GenerateMipmap         = ogl.GenerateMipmap
-	GenFramebuffers        = ogl.GenFramebuffers
-	BindFramebuffer        = ogl.BindFramebuffer
-	DeleteFramebuffers     = ogl.DeleteFramebuffers
-	FramebufferTexture2D   = ogl.FramebufferTexture2D
-	DrawBuffers            = ogl.DrawBuffers
-	CheckFramebufferStatus = ogl.CheckFramebufferStatus
-	DrawBuffer             = ogl.DrawBuffer
-	ReadBuffer             = ogl.ReadBuffer
-	BlitFramebuffer        = ogl.BlitFramebuffer
+	Ptr                     = ogl.Ptr
+	Clear                   = ogl.Clear
+	ClearColor              = ogl.ClearColor
+	FrontFace               = ogl.FrontFace
+	CullFace                = ogl.CullFace
+	DepthFunc               = ogl.DepthFunc
+	DepthMask               = ogl.DepthMask
+	GenTextures             = ogl.GenTextures
+	DeleteTextures          = ogl.DeleteTextures
+	BindTexture             = ogl.BindTexture
+	BindImageTexture        = ogl.BindImageTexture
+	ActiveTexture           = ogl.ActiveTexture
+	TexParameteri           = ogl.TexParameteri
+	TexParameteriv          = ogl.TexParameteriv
+	TexParameterf           = ogl.TexParameterf
+	TexParameterfv          = ogl.TexParameterfv
+	TexParameterIiv         = ogl.TexParameterIiv
+	TexParameterIuiv        = ogl.TexParameterIuiv
+	TexImage1D              = ogl.TexImage1D
+	TexImage2D              = ogl.TexImage2D
+	TexImage3D              = ogl.TexImage3D
+	TexImage2DMultisample   = ogl.TexImage2DMultisample
+	TexImage3DMultisample   = ogl.TexImage3DMultisample
+	GenerateMipmap          = ogl.GenerateMipmap
+	GenFramebuffers         = ogl.GenFramebuffers
+	BindFramebuffer         = ogl.BindFramebuffer
+	DeleteFramebuffers      = ogl.DeleteFramebuffers
+	FramebufferTexture2D    = ogl.FramebufferTexture2D
+	DrawBuffers             = ogl.DrawBuffers
+	CheckFramebufferStatus  = ogl.CheckFramebufferStatus
+	DrawBuffer              = ogl.DrawBuffer
+	ReadBuffer              = ogl.ReadBuffer
+	BlitFramebuffer         = ogl.BlitFramebuffer
+	GenBuffers              = ogl.GenBuffers
+	BindBuffer              = ogl.BindBuffer
+	DeleteBuffers           = ogl.DeleteBuffers
+	BufferData              = ogl.BufferData
+	GetAttribLocation       = ogl.GetAttribLocation
+	GenVertexArrays         = ogl.GenVertexArrays
+	BindVertexArray         = ogl.BindVertexArray
+	DeleteVertexArrays      = ogl.DeleteVertexArrays
+	EnableVertexAttribArray = ogl.EnableVertexAttribArray
+	VertexAttribPointer     = ogl.VertexAttribPointer
+	PtrOffset               = ogl.PtrOffset
+	Str                     = ogl.Str
+	Strs                    = ogl.Strs
+	DrawElements            = ogl.DrawElements
+	DrawElementsInstanced   = ogl.DrawElementsInstanced
+	DrawArrays              = ogl.DrawArrays
+	DrawArraysInstanced     = ogl.DrawArraysInstanced
+	BindBufferBase          = ogl.BindBufferBase
+	CopyBufferSubData       = ogl.CopyBufferSubData
+	BufferSubData           = ogl.BufferSubData
+	MapBuffer               = ogl.MapBuffer
+	UnmapBuffer             = ogl.UnmapBuffer
+	CreateProgram           = ogl.CreateProgram
+	CreateShader            = ogl.CreateShader
+	ShaderSource            = ogl.ShaderSource
+	CompileShader           = ogl.CompileShader
+	AttachShader            = ogl.AttachShader
+	DetachShader            = ogl.DetachShader
+	DeleteShader            = ogl.DeleteShader
+	LinkProgram             = ogl.LinkProgram
+	UseProgram              = ogl.UseProgram
+	DeleteProgram           = ogl.DeleteProgram
+	GetProgramiv            = ogl.GetProgramiv
+	GetProgramInfoLog       = ogl.GetProgramInfoLog
+	GetShaderInfoLog        = ogl.GetShaderInfoLog
+	DispatchCompute         = ogl.DispatchCompute
+	GetUniformLocation      = ogl.GetUniformLocation
+	Uniform1i               = ogl.Uniform1i
+	Uniform1f               = ogl.Uniform1f
+	Uniform2fv              = ogl.Uniform2fv
+	Uniform3fv              = ogl.Uniform3fv
+	UniformMatrix4fv        = ogl.UniformMatrix4fv
+	GetShaderiv             = ogl.GetShaderiv
 )
 
 // Errors
@@ -177,6 +224,8 @@ const (
 
 // Values
 const (
+	TRUE                             = ogl.TRUE
+	FALSE                            = ogl.FALSE
 	CW                               = ogl.CW
 	CCW                              = ogl.CCW
 	FRONT                            = ogl.FRONT
@@ -356,4 +405,12 @@ const (
 	COLOR_ATTACHMENT14               = ogl.COLOR_ATTACHMENT14
 	COLOR_ATTACHMENT15               = ogl.COLOR_ATTACHMENT15
 	DEPTH_ATTACHMENT                 = ogl.DEPTH_ATTACHMENT
+	READ_ONLY                        = ogl.READ_ONLY
+	VERTEX_SHADER                    = ogl.VERTEX_SHADER
+	FRAGMENT_SHADER                  = ogl.FRAGMENT_SHADER
+	GEOMETRY_SHADER                  = ogl.GEOMETRY_SHADER
+	COMPUTE_SHADER                   = ogl.COMPUTE_SHADER
+	LINK_STATUS                      = ogl.LINK_STATUS
+	COMPILE_STATUS                   = ogl.COMPILE_STATUS
+	INFO_LOG_LENGTH                  = ogl.INFO_LOG_LENGTH
 )

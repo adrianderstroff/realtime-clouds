@@ -2,21 +2,23 @@ package main
 
 import (
 	"runtime"
-	"strconv"
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/mathgl/mgl32"
 
-	"github.com/adrianderstroff/realtime-clouds/pkg/core"
-	"github.com/adrianderstroff/realtime-clouds/pkg/mesh"
-	"github.com/adrianderstroff/realtime-clouds/pkg/scene/camera"
-	tex "github.com/adrianderstroff/realtime-clouds/pkg/texture"
+	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
+	shader "github.com/adrianderstroff/realtime-clouds/pkg/core/shader"
+	window "github.com/adrianderstroff/realtime-clouds/pkg/core/window"
+	trackball "github.com/adrianderstroff/realtime-clouds/pkg/scene/camera/trackball"
+	box "github.com/adrianderstroff/realtime-clouds/pkg/view/mesh/box"
+	skybox "github.com/adrianderstroff/realtime-clouds/pkg/view/mesh/skybox"
+	tex "github.com/adrianderstroff/realtime-clouds/pkg/view/texture"
 )
 
 const (
-	SHADER_PATH = "./assets/shaders/"
-	TEX_PATH    = "./assets/images/textures/"
-	SKY_PATH    = "./assets/images/skyboxes/"
+	SHADER_PATH  = "./assets/shaders/"
+	TEX_PATH     = "./assets/images/textures/"
+	CUBEMAP_PATH = "./assets/images/cubemap/"
 )
 
 var (
@@ -27,29 +29,36 @@ var (
 func main() {
 	runtime.LockOSThread()
 
-	// setup opengl
+	// setup window
 	title := "Real-time clouds"
-	windowManager, _ := core.NewWindowManager(title, int(width), int(height))
-	defer windowManager.Close()
+	window, _ := window.New(title, int(width), int(height))
+	interaction := interaction.New(window)
+	defer window.Close()
 
-	// make shader
-	shader, _ := core.MakeProgram(SHADER_PATH+"/texture/texture.vert", SHADER_PATH+"/texture/texture.frag")
-
-	// make mesh
-	mesh := mesh.MakeQuad(2, 2, 2, false, gl.TRIANGLES)
-	texture, _ := tex.MakeTextureFromPath(TEX_PATH + "/profile.png")
+	// make textured cube
+	texshader, _ := shader.Make(SHADER_PATH+"/texture/texture.vert", SHADER_PATH+"/texture/texture.frag")
+	mesh := box.Make(1, 1, 1, false, gl.TRIANGLES)
+	texture, _ := tex.MakeFromPath(TEX_PATH + "/profile.png")
 	texture.GenMipmap()
 	mesh.AddTexture(texture)
-	shader.AddRenderable(mesh)
+	texshader.AddRenderable(mesh)
+
+	// make skybox
+	skyboxshader, _ := shader.Make(SHADER_PATH+"/skybox/skybox.vert", SHADER_PATH+"/skybox/skybox.frag")
+	sky, err := skybox.MakeFromDirectory(CUBEMAP_PATH+"/water/", "jpg", gl.TRIANGLES)
+	if err != nil {
+		panic(err)
+	}
+	skyboxshader.AddRenderable(sky)
 
 	// make camera
-	camera := camera.MakeDefaultTrackballCamera(width, height, 10.0)
-	windowManager.AddInteractable(&camera)
+	camera := trackball.MakeDefault(width, height, 10.0)
+	interaction.AddInteractable(&camera)
 
 	// main loop
 	render := func() {
 		// update title
-		windowManager.SetTitle(title + " " + strconv.FormatFloat(windowManager.GetFPS(), 'f', 0, 64) + "FPS")
+		window.SetTitle(title + " " + window.GetFPSFormatted())
 
 		// update camera
 		camera.Update()
@@ -59,13 +68,19 @@ func main() {
 		V := camera.GetView()
 		P := camera.GetPerspective()
 
-		// render
-		shader.Use()
-		shader.UpdateMat4("M", M)
-		shader.UpdateMat4("V", V)
-		shader.UpdateMat4("P", P)
-		shader.UpdateVec3("flatColor", mgl32.Vec3{0, 0, 1})
-		shader.Render()
+		// render box
+		texshader.Use()
+		texshader.UpdateMat4("M", M)
+		texshader.UpdateMat4("V", V)
+		texshader.UpdateMat4("P", P)
+		texshader.Render()
+
+		// render skybox
+		skyboxshader.Use()
+		skyboxshader.UpdateMat4("M", M)
+		skyboxshader.UpdateMat4("V", V)
+		skyboxshader.UpdateMat4("P", P)
+		skyboxshader.Render()
 	}
-	windowManager.RunMainLoop(render)
+	window.RunMainLoop(render)
 }

@@ -75,31 +75,31 @@ func MakeFromPath(path string) (Image, error) {
 	width := int32(rgba.Rect.Size().X)
 	height := int32(rgba.Rect.Size().Y)
 
-	// rearrange data by flipping the rows of the image
-	// this has to be done as the texture assumes the first row
-	// to be the bottom row and the last row at the top.
-	data := rgba.Pix
-	var tempdata []uint8
-	var row, col int32
-	for row = height - 1; row >= 0; row-- {
-		for col = 0; col < width; col++ {
-			idx := (row*width + col) * 4
-			tempdata = append(tempdata, data[idx])
-			tempdata = append(tempdata, data[idx+1])
-			tempdata = append(tempdata, data[idx+2])
-			tempdata = append(tempdata, data[idx+3])
-		}
-	}
-	data = tempdata
-
 	return Image{
 		format:         uint32(gl.RGBA),
 		internalFormat: int32(gl.RGBA),
 		width:          width,
 		height:         height,
 		pixelType:      uint32(gl.UNSIGNED_BYTE),
-		data:           data,
+		data:           rgba.Pix,
 	}, nil
+}
+
+// FlipRows changes the order of the rows by swapping the first row with the
+// last row, the second row with the second last row etc.
+func (image *Image) FlipRows() {
+	var tempdata []uint8
+	var row, col int32
+	for row = image.height - 1; row >= 0; row-- {
+		for col = 0; col < image.width; col++ {
+			idx := (row*image.width + col) * 4
+			tempdata = append(tempdata, image.data[idx])
+			tempdata = append(tempdata, image.data[idx+1])
+			tempdata = append(tempdata, image.data[idx+2])
+			tempdata = append(tempdata, image.data[idx+3])
+		}
+	}
+	image.data = tempdata
 }
 
 // GetFormat gets the format of the pixel data.
@@ -215,5 +215,5 @@ func (image *Image) SetRGBA(x, y int32, r, g, b, a uint8) {
 // This reflects the way opengl interprets the pixel data
 // when uploading it into a texture.
 func (image *Image) getIdx(x, y int32) int32 {
-	return ((image.height-1-y)*image.width + x) * 4
+	return (y*image.width + x) * 4
 }
