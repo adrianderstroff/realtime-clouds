@@ -5,5 +5,5 @@ uniform samplerCube cubeMap;
 out vec3 color;
 
 void main(){
-    color = vec3(texture(cubeMap, tex));
+    color = vec3(texture(cubeMap, normalize(tex)));
 }

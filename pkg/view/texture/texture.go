@@ -66,7 +66,10 @@ func MakeDepth(width, height int32) Texture {
 }
 
 // MakeCupeMapTexture creates a cube map with the images specfied from the path.
-func MakeCubeMap(right, left, top, bottom, front, back string) (Texture, error) {
+// For usage with skyboxes where textures are on the inside of the cube, set the
+// inside parameter to true to flip all textures horizontally, otherwise set this
+// parameter to false.
+func MakeCubeMap(right, left, top, bottom, front, back string, inside bool) (Texture, error) {
 	tex := Texture{0, gl.TEXTURE_CUBE_MAP, 0}
 
 	// generate cube map texture
@@ -80,6 +83,10 @@ func MakeCubeMap(right, left, top, bottom, front, back string) (Texture, error) 
 		image, err := image.MakeFromPath(path)
 		if err != nil {
 			return Texture{}, err
+		}
+		// if inside (e.g. for skyboxes) flip images horizontally
+		if inside {
+			image.FlipX()
 		}
 		gl.TexImage2D(target, 0, image.GetInternalFormat(), image.GetWidth(), image.GetHeight(),
 			0, image.GetFormat(), image.GetPixelType(), image.GetDataPointer())
@@ -105,6 +112,8 @@ func MakeFromPath(path string) (Texture, error) {
 		return Texture{}, err
 	}
 
+	image.FlipY()
+
 	return Make(image.GetWidth(), image.GetHeight(), image.GetInternalFormat(), image.GetFormat(),
 		image.GetPixelType(), image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
@@ -113,6 +122,17 @@ func MakeFromPath(path string) (Texture, error) {
 func MakeFromImage(image *image.Image) Texture {
 	return Make(image.GetWidth(), image.GetHeight(), image.GetInternalFormat(), image.GetFormat(),
 		image.GetPixelType(), image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+}
+
+// MakeFromData creates a texture
+func MakeFromData(width, height int32, format int, data []uint8) (Texture, error) {
+	image, err := image.MakeFromData(width, height, format, data)
+	if err != nil {
+		return Texture{}, err
+	}
+
+	return Make(image.GetWidth(), image.GetHeight(), image.GetInternalFormat(), image.GetFormat(),
+		image.GetPixelType(), image.GetDataPointer(), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
 // MakeMultisampleTexture creates a multisample texture of the given width and height and the number of samples that should be used.
@@ -152,6 +172,57 @@ func MakeColorMultisample(width, height, samples int32) Texture {
 func MakeDepthMultisample(width, height, samples int32) Texture {
 	return MakeMultisample(width, height, samples, gl.DEPTH_COMPONENT,
 		gl.LINEAR, gl.LINEAR, gl.CLAMP_TO_BORDER, gl.CLAMP_TO_BORDER)
+}
+
+// Make3D constructs a 3D texture of the width and height of each image per slice and depth describing the number of slices.
+// Internalformat, format and pixelType specifed the layout of the data.
+// Data is pointing to the data that is going to be uploaded. The data layout is slices first then rows and lastly columns.
+// Min and mag specify the behaviour when down and upscaling the texture.
+// S and t specify the behaviour at the borders of the image. r specified the behaviour between the slices.
+func Make3D(width, height, depth, internalformat int32, format, pixelType uint32, data unsafe.Pointer, min, mag, s, t, r int32) Texture {
+	texture := Texture{0, gl.TEXTURE_3D, 0}
+
+	// generate and bind texture
+	gl.GenTextures(1, &texture.handle)
+	texture.Bind(0)
+
+	// set texture properties
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, min)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, mag)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, s)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, t)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, r)
+
+	// specify a texture image
+	gl.TexImage3D(gl.TEXTURE_3D, 0, internalformat, width, height, depth, 0, format, pixelType, data)
+
+	// unbind texture
+	texture.Unbind()
+
+	return texture
+}
+
+// Make3DFromPaths creates a 3D texture with the data of the images specifed by the provided paths.
+func Make3DFromPath(paths []string) (Texture, error) {
+	// load images from the specified paths and accumulate the loaded data
+	images := []image.Image{}
+	data := []uint8{}
+	for _, path := range paths {
+		image, err := image.MakeFromPath(path)
+		if err != nil {
+			return Texture{}, err
+		}
+
+		image.FlipY()
+
+		data = append(data, image.GetData()...)
+		images = append(images, image)
+	}
+
+	image := images[0]
+	layers := int32(len(paths))
+	return Make3D(image.GetWidth(), image.GetHeight(), layers, image.GetInternalFormat(), image.GetFormat(),
+		image.GetPixelType(), gl.Ptr(data), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
 // Delete destroys the Texture.

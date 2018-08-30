@@ -1,5 +1,4 @@
-// Package mesh is used for creating meshes from geometry and textures.
-// Meshes are entities that can be assigned to a ShaderProgram in order to render them.
+// Package box is used for creating a simple box mesh.
 package box
 
 import (

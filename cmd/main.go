@@ -45,7 +45,7 @@ func main() {
 
 	// make skybox
 	skyboxshader, _ := shader.Make(SHADER_PATH+"/skybox/skybox.vert", SHADER_PATH+"/skybox/skybox.frag")
-	sky, err := skybox.MakeFromDirectory(CUBEMAP_PATH+"/water/", "jpg", gl.TRIANGLES)
+	sky, err := skybox.MakeFromDirectory(50.0, CUBEMAP_PATH+"/debug/", "png", gl.TRIANGLES)
 	if err != nil {
 		panic(err)
 	}

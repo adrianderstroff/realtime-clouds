@@ -9,11 +9,11 @@ import (
 
 // Make constructs a skybox made from a quad with the cube map textures
 // specified by the provided paths as well as the rendering mode.
-func Make(right, left, top, bottom, front, back string, mode uint32) (mesh.Mesh, error) {
+func Make(sidelength float32, right, left, top, bottom, front, back string, mode uint32) (mesh.Mesh, error) {
 	// make geometry
-	geometry := quad.Make(50, 50, 50, false)
+	geometry := quad.Make(sidelength, sidelength, sidelength, true)
 	// make texture
-	cubemap, err := tex.MakeCubeMap(right, left, top, bottom, front, back)
+	cubemap, err := tex.MakeCubeMap(right, left, top, bottom, front, back, true)
 	if err != nil {
 		return mesh.Mesh{}, err
 	}
@@ -32,16 +32,17 @@ func Make(right, left, top, bottom, front, back string, mode uint32) (mesh.Mesh,
 	return mesh, nil
 }
 
-// MakeFromDirectory constructs a skybox made from a quad with the cube map textures
-// specified by the provided directory and fileending as well as the rendering mode.
+// MakeFromDirectory constructs a skybox made from a quad with the specified side length
+// in all 3 dimensions as well as the  the cube map textures specified by the provided
+// directory and fileending as well as the rendering mode.
 // The specified directory has to have all images in the same file format and the names
-// of the files have to be right, left, top, bottom, front, back respectively.
-func MakeFromDirectory(dir, fileending string, mode uint32) (mesh.Mesh, error) {
+// of the files have to be named right, left, top, bottom, front and back respectively.
+func MakeFromDirectory(sidelength float32, dir, fileending string, mode uint32) (mesh.Mesh, error) {
 	right := dir + "right." + fileending
 	left := dir + "left." + fileending
 	top := dir + "top." + fileending
 	bottom := dir + "bottom." + fileending
 	front := dir + "front." + fileending
 	back := dir + "back." + fileending
-	return Make(right, left, top, bottom, front, back, mode)
+	return Make(sidelength, right, left, top, bottom, front, back, mode)
 }

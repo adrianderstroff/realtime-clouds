@@ -48,6 +48,21 @@ func Make(width, height int32, r, g, b, a uint8) (Image, error) {
 	}, nil
 }
 
+// MakeFromData constructs an image of the specified width and height and the specified data.
+// The format specifies the format of the data e.g. RED, RG, RGB, RGBA, BGR, BGRA, RED_INTEGER,
+// RG_INTEGER,  RGB_INTEGER, BGR_INTEGER, RGBA_INTEGER, BGRA_INTEGER, STENCIL_INDEX,
+// DEPTH_COMPONENT or DEPTH_STENCIL.
+func MakeFromData(width, height int32, format int, data []uint8) (Image, error) {
+	return Image{
+		format:         uint32(format),
+		internalFormat: int32(gl.RGBA),
+		width:          width,
+		height:         height,
+		pixelType:      uint32(gl.UNSIGNED_BYTE),
+		data:           data,
+	}, nil
+}
+
 // MakeImageFromPath constructs the image data from the specified path.
 // If there is no image at the specified path an error is returned instead.
 func MakeFromPath(path string) (Image, error) {
@@ -85,9 +100,26 @@ func MakeFromPath(path string) (Image, error) {
 	}, nil
 }
 
-// FlipRows changes the order of the rows by swapping the first row with the
+// FlipX changes the order of the columns by swapping the first column of a row with the
+// last column of the same row, the second column of this row with the second last column of this row etc.
+func (image *Image) FlipX() {
+	var tempdata []uint8
+	var row, col int32
+	for row = 0; row < image.height; row++ {
+		for col = image.width - 1; col >= 0; col-- {
+			idx := (row*image.width + col) * 4
+			tempdata = append(tempdata, image.data[idx])
+			tempdata = append(tempdata, image.data[idx+1])
+			tempdata = append(tempdata, image.data[idx+2])
+			tempdata = append(tempdata, image.data[idx+3])
+		}
+	}
+	image.data = tempdata
+}
+
+// FlipY changes the order of the rows by swapping the first row with the
 // last row, the second row with the second last row etc.
-func (image *Image) FlipRows() {
+func (image *Image) FlipY() {
 	var tempdata []uint8
 	var row, col int32
 	for row = image.height - 1; row >= 0; row-- {
@@ -130,6 +162,11 @@ func (image *Image) GetPixelType() uint32 {
 // GetDataPointer returns an pointer to the beginning of the image data.
 func (image *Image) GetDataPointer() unsafe.Pointer {
 	return gl.Ptr(image.data)
+}
+
+// GetData returns a copy of the images data
+func (image *Image) GetData() []uint8 {
+	return image.data
 }
 
 // GetR returns the red value of the pixel at (x,y).

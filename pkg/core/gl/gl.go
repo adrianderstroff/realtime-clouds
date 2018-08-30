@@ -1,6 +1,6 @@
 // Package core provides an abstraction layer on top of OpenGL.
 // It contains entities that provide utilities to simplify rendering.
-package core
+package gl
 
 import (
 	"fmt"
@@ -24,6 +24,7 @@ func Init() error {
 
 	// set clear color
 	Enable(DEPTH_TEST)
+	Enable(CULL_FACE)
 	FrontFace(CCW)
 	CullFace(BACK)
 	DepthFunc(LESS)
@@ -413,4 +414,16 @@ const (
 	LINK_STATUS                      = ogl.LINK_STATUS
 	COMPILE_STATUS                   = ogl.COMPILE_STATUS
 	INFO_LOG_LENGTH                  = ogl.INFO_LOG_LENGTH
+	POINTS                           = ogl.POINTS
+	LINE_STRIP                       = ogl.LINE_STRIP
+	LINE_LOOP                        = ogl.LINE_LOOP
+	LINES                            = ogl.LINES
+	LINE_STRIP_ADJACENCY             = ogl.LINE_STRIP_ADJACENCY
+	LINES_ADJACENCY                  = ogl.LINES_ADJACENCY
+	TRIANGLE_STRIP                   = ogl.TRIANGLE_STRIP
+	TRIANGLE_FAN                     = ogl.TRIANGLE_FAN
+	TRIANGLES                        = ogl.TRIANGLES
+	TRIANGLE_STRIP_ADJACENCY         = ogl.TRIANGLE_STRIP_ADJACENCY
+	TRIANGLES_ADJACENCY              = ogl.TRIANGLES_ADJACENCY
+	PATCHES                          = ogl.PATCHES
 )

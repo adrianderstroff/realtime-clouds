@@ -1,5 +1,5 @@
 // Package camera provides implementations of different camera models.
-package camera
+package trackball
 
 import (
 	"math"

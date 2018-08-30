@@ -1,6 +1,6 @@
 # realtime-clouds
 
-TODO
+Implementation of the volumetric cloud rendering approach based on the presentation ***The real-time volumetric cloudscapes of Horizon:Zero Dawn*** by Andrew Schneider held at ***SIGGRAPH 2015*** as part of the *Advances in real-time rendering* course.
 
 ## Requirements
 This project requires a GPU with OpenGL 4.3+ support.
