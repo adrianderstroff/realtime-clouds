@@ -3,6 +3,7 @@ package main
 import (
 	"runtime"
 
+	"github.com/adrianderstroff/realtime-clouds/pkg/buffer/fbo"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/shader"
@@ -36,17 +37,34 @@ func main() {
 	camera := trackball.MakeDefault(WIDTH, HEIGHT, 10.0)
 	interaction.AddInteractable(&camera)
 
-	// generate worley noise
-	worleyw, worleyh := 128, 128
-	worleydata := noise.MakeWorley(worleyw, worleyh, 20)
-	worleytex, _ := texture.MakeFromData(int32(worleyw), int32(worleyh), gl.RGB, worleydata)
-	worleytex.GenMipmap()
+	// generate 3D texture with worley noise
+	noisedata := noise.Worley3D(128, 128, 128, 20)
+	noisetex, err := texture.Make3DFromData(noisedata, 128, 128, 128, gl.RGBA, gl.RED)
+	if err != nil {
+		panic(err)
+	}
 
-	// make textured cube
-	texshader, _ := shader.Make(SHADER_PATH+"/texture/texture.vert", SHADER_PATH+"/texture/texture.frag")
-	mesh := box.Make(2, 2, 2, false, gl.TRIANGLES)
-	mesh.AddTexture(worleytex)
-	texshader.AddRenderable(mesh)
+	// create fbos
+	raystartfbo := fbo.Make(WIDTH, HEIGHT)
+	raystartfbo.AttachColorTexture(texture.MakeColor(WIDTH, HEIGHT), 0)
+	raystartfbo.AttachDepthTexture(texture.MakeDepth(WIDTH, HEIGHT))
+	rayendfbo := fbo.Make(WIDTH, HEIGHT)
+	rayendfbo.AttachColorTexture(texture.MakeColor(WIDTH, HEIGHT), 0)
+	rayendfbo.AttachDepthTexture(texture.MakeDepth(WIDTH, HEIGHT))
+
+	// create cube
+	cube := box.Make(2, 2, 2, false, gl.TRIANGLES)
+
+	// prepare setup shader
+	setupshader, _ := shader.Make(SHADER_PATH+"/setup/setup.vert", SHADER_PATH+"/setup/setup.frag")
+	setupshader.AddRenderable(cube)
+
+	// prepare raymarching shader
+	raymarchshader, err := shader.Make(SHADER_PATH+"/raymarch/raymarch.vert", SHADER_PATH+"/raymarch/raymarch.frag")
+	if err != nil {
+		panic(err)
+	}
+	raymarchshader.AddRenderable(cube)
 
 	// render loop
 	renderloop := func() {
@@ -55,18 +73,41 @@ func main() {
 
 		// update camera
 		camera.Update()
-
-		// get camera matrices
 		M := mgl32.Ident4()
 		V := camera.GetView()
 		P := camera.GetPerspective()
 
+		// calculate ray start and end positions
+		raystartfbo.Bind()
+		raystartfbo.Clear()
+		setupshader.Use()
+		setupshader.UpdateMat4("M", M)
+		setupshader.UpdateMat4("V", V)
+		setupshader.UpdateMat4("P", P)
+		setupshader.Render()
+		raystartfbo.Unbind()
+
+		gl.CullFace(gl.FRONT)
+		rayendfbo.Bind()
+		rayendfbo.Clear()
+		setupshader.Use()
+		setupshader.UpdateMat4("M", M)
+		setupshader.UpdateMat4("V", V)
+		setupshader.UpdateMat4("P", P)
+		setupshader.Render()
+		rayendfbo.Unbind()
+		gl.CullFace(gl.BACK)
+
 		// render box
-		texshader.Use()
-		texshader.UpdateMat4("M", M)
-		texshader.UpdateMat4("V", V)
-		texshader.UpdateMat4("P", P)
-		texshader.Render()
+		raystartfbo.ColorTextures[0].Bind(0)
+		rayendfbo.ColorTextures[0].Bind(1)
+		noisetex.Bind(2)
+		raymarchshader.Use()
+		raymarchshader.UpdateInt32("iterations", 10)
+		raymarchshader.Render()
+		raystartfbo.ColorTextures[0].Unbind()
+		rayendfbo.ColorTextures[0].Unbind()
+		noisetex.Unbind()
 	}
 	window.RunMainLoop(renderloop)
 }

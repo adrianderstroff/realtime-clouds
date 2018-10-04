@@ -25,7 +25,7 @@ func MakeEmpty() FBO {
 }
 
 // Make creates an FBO with one color and depth texture of the specified width and height.
-func Make(width, height int32) FBO {
+func Make(width, height int) FBO {
 	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D}
 	gl.GenFramebuffers(1, &fbo.handle)
 	color := tex.MakeColor(width, height)

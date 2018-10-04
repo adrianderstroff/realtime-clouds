@@ -1,4 +1,4 @@
-package scene
+package camera
 
 import "github.com/go-gl/mathgl/mgl32"
 

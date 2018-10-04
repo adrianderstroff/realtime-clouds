@@ -15,6 +15,11 @@ go get -u github.com/go-gl/mathgl/mgl32
 ```
 After getting all dependencies the project should work without any errors.
 
+## Style guide
+
+### Dimensions 
+*length x width x height*
+
 ## Theory
 
 TODO
