@@ -30,6 +30,7 @@ func main() {
 	// setup window
 	title := "Volume raymarching"
 	window, _ := window.New(title, int(WIDTH), int(HEIGHT))
+	window.LockFPS(60)
 	interaction := interaction.New(window)
 	defer window.Close()
 
@@ -39,18 +40,23 @@ func main() {
 
 	// generate 3D texture with worley noise
 	noisedata := noise.Worley3D(128, 128, 128, 20)
-	noisetex, err := texture.Make3DFromData(noisedata, 128, 128, 128, gl.RGBA, gl.RED)
+	noisetex, err := texture.Make3DFromData(noisedata, 128, 128, 128, gl.RED, gl.RED)
 	if err != nil {
 		panic(err)
 	}
 
 	// create fbos
 	raystartfbo := fbo.Make(WIDTH, HEIGHT)
-	raystartfbo.AttachColorTexture(texture.MakeColor(WIDTH, HEIGHT), 0)
-	raystartfbo.AttachDepthTexture(texture.MakeDepth(WIDTH, HEIGHT))
+	raystartcolor := texture.MakeColor(WIDTH, HEIGHT)
+	raystartdepth := texture.MakeDepth(WIDTH, HEIGHT)
+	raystartfbo.AttachColorTexture(&raystartcolor, 0)
+	raystartfbo.AttachDepthTexture(&raystartdepth)
+
 	rayendfbo := fbo.Make(WIDTH, HEIGHT)
-	rayendfbo.AttachColorTexture(texture.MakeColor(WIDTH, HEIGHT), 0)
-	rayendfbo.AttachDepthTexture(texture.MakeDepth(WIDTH, HEIGHT))
+	rayendcolor := texture.MakeColor(WIDTH, HEIGHT)
+	rayenddepth := texture.MakeDepth(WIDTH, HEIGHT)
+	rayendfbo.AttachColorTexture(&rayendcolor, 0)
+	rayendfbo.AttachDepthTexture(&rayenddepth)
 
 	// create cube
 	cube := box.Make(2, 2, 2, false, gl.TRIANGLES)
@@ -99,15 +105,18 @@ func main() {
 		gl.CullFace(gl.BACK)
 
 		// render box
-		raystartfbo.ColorTextures[0].Bind(0)
-		rayendfbo.ColorTextures[0].Bind(1)
+		raystartcolor.Bind(0)
+		rayendcolor.Bind(1)
 		noisetex.Bind(2)
 		raymarchshader.Use()
-		raymarchshader.UpdateInt32("iterations", 10)
 		raymarchshader.Render()
-		raystartfbo.ColorTextures[0].Unbind()
-		rayendfbo.ColorTextures[0].Unbind()
+		raystartcolor.Unbind()
+		rayendcolor.Unbind()
 		noisetex.Unbind()
+
+		// copy textures to screen
+		raystartfbo.CopyToScreenRegion(0, 0, 0, int32(WIDTH), int32(HEIGHT), 0, 0, 200, 200)
+		rayendfbo.CopyToScreenRegion(0, 0, 0, int32(WIDTH), int32(HEIGHT), 200, 0, 200, 200)
 	}
 	window.RunMainLoop(renderloop)
 }

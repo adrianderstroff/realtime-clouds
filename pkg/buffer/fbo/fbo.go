@@ -30,8 +30,8 @@ func Make(width, height int) FBO {
 	gl.GenFramebuffers(1, &fbo.handle)
 	color := tex.MakeColor(width, height)
 	depth := tex.MakeDepth(width, height)
-	fbo.AttachColorTexture(color, 0)
-	fbo.AttachDepthTexture(depth)
+	fbo.AttachColorTexture(&color, 0)
+	fbo.AttachDepthTexture(&depth)
 	return fbo
 }
 
@@ -85,23 +85,23 @@ func (fbo *FBO) Unbind() {
 }
 
 // AttachColorTexture adds a color texture at the position specified by index.
-func (fbo *FBO) AttachColorTexture(texture tex.Texture, index uint32) {
+func (fbo *FBO) AttachColorTexture(texture *tex.Texture, index uint32) {
 	fbo.Bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0+index, fbo.textureType, texture.GetHandle(), 0)
 	drawBuffers := []uint32{gl.COLOR_ATTACHMENT0}
 	gl.DrawBuffers(1, &drawBuffers[0])
 	fbo.Unbind()
 	// add handle
-	fbo.ColorTextures = append(fbo.ColorTextures, &texture)
+	fbo.ColorTextures = append(fbo.ColorTextures, texture)
 }
 
 // AttachDepthTexture adds a depth texture to the FBO.
-func (fbo *FBO) AttachDepthTexture(texture tex.Texture) {
+func (fbo *FBO) AttachDepthTexture(texture *tex.Texture) {
 	fbo.Bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, fbo.textureType, texture.GetHandle(), 0)
 	fbo.Unbind()
 	// add handle
-	fbo.DepthTexture = &texture
+	fbo.DepthTexture = texture
 }
 
 // Checks if the framebuffer is complete

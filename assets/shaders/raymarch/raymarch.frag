@@ -1,45 +1,47 @@
-#version 410 core
+#version 430
 
-uniform sampler2D rayStartTex;
-uniform sampler2D rayEndTex;
-uniform sampler3D noiseTex;
+layout(binding = 0) uniform sampler2D rayStartTex;
+layout(binding = 1) uniform sampler2D rayEndTex;
+layout(binding = 2) uniform sampler3D noiseTex;
 uniform int iterations = 10;
 
 in Vertex {
     vec2 uv;
 } i;
 
-out vec3 color;
+out vec4 color;
+
+bool inside(vec3 pos, vec3 start, vec3 end) {
+    return length(end - start) - length(pos - start) >= 0.0; 
+}
 
 void main() {
     vec3 start = texture(rayStartTex, i.uv).xyz;
     vec3 end   = texture(rayEndTex,   i.uv).xyz;
     vec3 dir   = normalize(end - start);
 
-    /* float stepSize = 1.0 / float(iterations);
+    // specify the step vector
+    float stepSize = 1.0 / float(iterations);
     vec3 step = dir * stepSize;
 
-    vec3 pos = start;
+    // the color that is accumulated during raymarching
     vec4 dst = vec4(0, 0, 0, 0);
 
-    for(int i = 0; i < iterations; i++) {
-        float value = texture(noiseTex, pos).r;
-
+    // do the actual raymarching
+    vec3 pos = start;
+    while(inside(pos, start, end)) {
         // calculate source
-        vec4 src = vec4(value);
-        //src.a *= 0.5;
+        vec4 src = vec4(texture(noiseTex, pos).r);
+        src.a *= 0.5;
         src.rgb *= src.a;
         dst = (1.0 - dst.a) * src + dst;
 
         // early ray termination
-        if(dst.a >= 0.95) break;
+        if(dst.a >= 0.99) break;
 
         // advance
         pos += step;
-
-        //if (pos.x > 1.0 || pos.y > 1.0 || pos.z > 1.0) break;
     }
 
-    color = dst.rgb; */
-    color = texture(rayStartTex, i.uv).xyz;
+    color = dst;
 }
