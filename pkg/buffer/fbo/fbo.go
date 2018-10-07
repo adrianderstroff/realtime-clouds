@@ -12,21 +12,43 @@ import (
 type FBO struct {
 	handle        uint32
 	isBound       bool
-	ColorTextures []*tex.Texture
-	DepthTexture  *tex.Texture
+	colorTextures map[uint32]*tex.Texture
+	depthTexture  *tex.Texture
 	textureType   uint32
+}
+
+// GetColorTexture returns the color texture at the position of the specified index.
+func (fbo *FBO) GetColorTexture(index uint32) *tex.Texture {
+	return fbo.colorTextures[index]
+}
+
+// GetDepthTexture returns the attached depth texture.
+func (fbo *FBO) GetDepthTexture() *tex.Texture {
+	return fbo.depthTexture
 }
 
 // MakeEmpty FBO creates an empty FBO that works as the default frame buffer.
 func MakeEmpty() FBO {
-	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D}
+	fbo := FBO{
+		handle:        0,
+		isBound:       false,
+		colorTextures: map[uint32]*tex.Texture{},
+		depthTexture:  nil,
+		textureType:   gl.TEXTURE_2D,
+	}
 	gl.GenFramebuffers(1, &fbo.handle)
 	return fbo
 }
 
 // Make creates an FBO with one color and depth texture of the specified width and height.
 func Make(width, height int) FBO {
-	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D}
+	fbo := FBO{
+		handle:        0,
+		isBound:       false,
+		colorTextures: map[uint32]*tex.Texture{},
+		depthTexture:  nil,
+		textureType:   gl.TEXTURE_2D,
+	}
 	gl.GenFramebuffers(1, &fbo.handle)
 	color := tex.MakeColor(width, height)
 	depth := tex.MakeDepth(width, height)
@@ -35,25 +57,48 @@ func Make(width, height int) FBO {
 	return fbo
 }
 
-// MakeMultisampleFBO make an empty multisampled frame buffer.
-func MakeMultisample() FBO {
-	fbo := FBO{0, false, nil, nil, gl.TEXTURE_2D_MULTISAMPLE}
+// MakeEmptyMultisample make an empty multisampled frame buffer.
+func MakeEmptyMultisample() FBO {
+	fbo := FBO{
+		handle:        0,
+		isBound:       false,
+		colorTextures: map[uint32]*tex.Texture{},
+		depthTexture:  nil,
+		textureType:   gl.TEXTURE_2D_MULTISAMPLE,
+	}
 	gl.GenFramebuffers(1, &fbo.handle)
+	return fbo
+}
+
+// MakeMultisample make a multisampled frame buffer with a color and a depth texture of the specified width, height and samples attached.
+func MakeMultisample(width, height, samples int) FBO {
+	fbo := FBO{
+		handle:        0,
+		isBound:       false,
+		colorTextures: map[uint32]*tex.Texture{},
+		depthTexture:  nil,
+		textureType:   gl.TEXTURE_2D_MULTISAMPLE,
+	}
+	gl.GenFramebuffers(1, &fbo.handle)
+	color := tex.MakeColorMultisample(width, height, samples)
+	depth := tex.MakeDepthMultisample(width, height, samples)
+	fbo.AttachColorTexture(&color, 0)
+	fbo.AttachDepthTexture(&depth)
 	return fbo
 }
 
 // Delete destroys this FBO and all associated color and depth textures.
 func (fbo *FBO) Delete() {
 	// delete textures
-	if fbo.ColorTextures != nil {
-		for _, colTex := range fbo.ColorTextures {
+	if fbo.colorTextures != nil {
+		for _, colTex := range fbo.colorTextures {
 			if colTex != nil {
 				colTex.Delete()
 			}
 		}
 	}
-	if fbo.DepthTexture != nil {
-		fbo.DepthTexture.Delete()
+	if fbo.depthTexture != nil {
+		fbo.depthTexture.Delete()
 	}
 
 	// unbind fbo
@@ -88,11 +133,17 @@ func (fbo *FBO) Unbind() {
 func (fbo *FBO) AttachColorTexture(texture *tex.Texture, index uint32) {
 	fbo.Bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0+index, fbo.textureType, texture.GetHandle(), 0)
-	drawBuffers := []uint32{gl.COLOR_ATTACHMENT0}
+	drawBuffers := []uint32{gl.COLOR_ATTACHMENT0 + index}
 	gl.DrawBuffers(1, &drawBuffers[0])
 	fbo.Unbind()
+
+	// delete texture if it would be overwritten
+	if previoustexture, ok := fbo.colorTextures[index]; ok {
+		previoustexture.Delete()
+	}
+
 	// add handle
-	fbo.ColorTextures = append(fbo.ColorTextures, texture)
+	fbo.colorTextures[index] = texture
 }
 
 // AttachDepthTexture adds a depth texture to the FBO.
@@ -100,8 +151,14 @@ func (fbo *FBO) AttachDepthTexture(texture *tex.Texture) {
 	fbo.Bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, fbo.textureType, texture.GetHandle(), 0)
 	fbo.Unbind()
+
+	// delete previous texture
+	if fbo.depthTexture != nil {
+		fbo.depthTexture.Delete()
+	}
+
 	// add handle
-	fbo.DepthTexture = texture
+	fbo.depthTexture = texture
 }
 
 // Checks if the framebuffer is complete

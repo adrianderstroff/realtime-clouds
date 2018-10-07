@@ -3,7 +3,7 @@
 layout(binding = 0) uniform sampler2D rayStartTex;
 layout(binding = 1) uniform sampler2D rayEndTex;
 layout(binding = 2) uniform sampler3D noiseTex;
-uniform int iterations = 10;
+uniform int iterations;
 
 in Vertex {
     vec2 uv;
@@ -20,8 +20,10 @@ void main() {
     vec3 end   = texture(rayEndTex,   i.uv).xyz;
     vec3 dir   = normalize(end - start);
 
+    if (length(end - start) < 0.000001) discard;
+
     // specify the step vector
-    float stepSize = 1.0 / float(iterations);
+    float stepSize = length(end - start) / float(iterations);
     vec3 step = dir * stepSize;
 
     // the color that is accumulated during raymarching
@@ -32,7 +34,7 @@ void main() {
     while(inside(pos, start, end)) {
         // calculate source
         vec4 src = vec4(texture(noiseTex, pos).r);
-        src.a *= 0.5;
+        //src.a *= 0.5;
         src.rgb *= src.a;
         dst = (1.0 - dst.a) * src + dst;
 
