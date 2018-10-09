@@ -8,6 +8,83 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+func Perlin2D(width, height, res int) []uint8 {
+	// divide volume into cells
+	xstep := float32(width) / float32(res)
+	ystep := float32(height) / float32(res)
+
+	// build random vector grid
+	vectors := make([][]mgl32.Vec2, res)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for y := 0; y < res; y++ {
+		vectors[y] = make([]mgl32.Vec2, res)
+		for x := 0; x < res; x++ {
+			randomvector := mgl32.Vec2{r.Float32(), r.Float32()}
+			vectors[y][x] = randomvector.Normalize()
+		}
+	}
+
+	// calc random value for each pixel
+	var maxval float32 = 0
+	var values []float32
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			// get cell index of current voxel
+			xcell := int(cgm.Floor32(float32(x) / xstep))
+			ycell := int(cgm.Floor32(float32(y) / ystep))
+
+			// get relative position within the cell
+			xrel := cgm.Mod32(float32(x), xstep) / xstep
+			yrel := cgm.Mod32(float32(y), ystep) / ystep
+			pixelposition := mgl32.Vec2{xrel, yrel}
+
+			// define weight function
+			weight := func(x, y int) float32 {
+				// get gradient vector and its position
+				xabs := loop(xcell+x, res)
+				yabs := loop(ycell+y, res)
+				gradientvector := vectors[yabs][xabs]
+
+				// calc distance from this point to the pixel position
+				gradientposition := mgl32.Vec2{float32(x), float32(y)}
+				distancevector := pixelposition.Sub(gradientposition)
+
+				// return dot product
+				return distancevector.Dot(gradientvector)
+			}
+
+			// get all 8 random vectors on the grid points surrounding the current cell
+			w00 := weight(0, 0)
+			w01 := weight(0, 1)
+			w10 := weight(1, 0)
+			w11 := weight(1, 1)
+
+			// interpolate values
+			tx := fade(pixelposition.X())
+			ty := fade(pixelposition.Y())
+			wx0 := lerp(w00, w10, tx)
+			wx1 := lerp(w01, w11, tx)
+			val := lerp(wx0, wx1, ty)
+
+			// bookkeeping of the biggest smallest distance for the following
+			// normalization step
+			maxval = cgm.Max32(maxval, val)
+
+			// append val to result data
+			values = append(values, val)
+		}
+	}
+
+	// map distance to 0..255 and save in data slice
+	var data []uint8
+	for i := 0; i < len(values); i++ {
+		val := cgm.Map(values[i], 0, maxval, 0, 255)
+		data = append(data, uint8(val))
+	}
+
+	return data
+}
+
 func Perlin3D(length, width, height, res int) []uint8 {
 	// divide volume into cells
 	xstep := float32(length) / float32(res)

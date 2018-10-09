@@ -44,6 +44,7 @@ func main() {
 	fbo2 := fbo.Make(WIDTH, HEIGHT)
 	fbo3 := fbo.Make(WIDTH, HEIGHT)
 	fbo4 := fbo.Make(WIDTH, HEIGHT)
+	fbo5 := fbo.MakeEmpty()
 
 	// generate 3D texture with worley noise
 	worleydata := noise.Worley3D(128, 128, 128, 5)
@@ -68,6 +69,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// generate 2D texture with curl noise
+	curldata := noise.Curl2D(128, 128, 10)
+	curltex, err := texture.MakeFromData(curldata, 128, 128, gl.RGB, gl.RED)
+	if err != nil {
+		panic(err)
+	}
+	fbo5.AttachColorTexture(&curltex, 0)
 
 	// setup raymarching pass
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, SHADER_PATH)
@@ -98,6 +107,7 @@ func main() {
 		fbo2.CopyToScreenRegion(0, 0, 0, int32(WIDTH), int32(HEIGHT), int32(WIDTH/2), 0, int32(WIDTH/2), int32(HEIGHT/2))
 		fbo3.CopyToScreenRegion(0, 0, 0, int32(WIDTH), int32(HEIGHT), 0, int32(HEIGHT/2), int32(WIDTH/2), int32(HEIGHT/2))
 		fbo4.CopyToScreenRegion(0, 0, 0, int32(WIDTH), int32(HEIGHT), int32(WIDTH/2), int32(HEIGHT/2), int32(WIDTH/2), int32(HEIGHT/2))
+		fbo5.CopyToScreenRegion(0, 0, 0, 128, 128, int32(WIDTH/2-100), int32(HEIGHT/2-100), 200, 200)
 	}
 	window.RunMainLoop(renderloop)
 }

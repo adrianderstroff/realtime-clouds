@@ -126,7 +126,7 @@ func MakeFromImage(image *image2d.Image2D, internalformat int32, format uint32) 
 }
 
 // MakeFromData creates a texture
-func MakeFromData(width, height int, internalformat int32, format uint32, data []uint8) (Texture, error) {
+func MakeFromData(data []uint8, width, height int, internalformat int32, format uint32) (Texture, error) {
 	image, err := image2d.MakeFromData(width, height, data)
 	if err != nil {
 		return Texture{}, err
