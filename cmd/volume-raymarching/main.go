@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/buffer/fbo"
+	"github.com/go-gl/mathgl/mgl32"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
@@ -13,7 +14,6 @@ import (
 	"github.com/adrianderstroff/realtime-clouds/pkg/noise"
 	"github.com/adrianderstroff/realtime-clouds/pkg/scene/camera/trackball"
 	"github.com/adrianderstroff/realtime-clouds/pkg/view/texture"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
 const (
@@ -59,19 +59,19 @@ func main() {
 	}
 
 	// generate 3D texture with perlin noise
-	perlindata := noise.Perlin3D(128, 128, 128, 5)
+	perlindata := noise.Perlin3D(128, 128, 128, 1)
 	perlintex, err := texture.Make3DFromData(perlindata, 128, 128, 128, gl.RED, gl.RED)
 	if err != nil {
 		panic(err)
 	}
-	perlindata = noise.Perlin3D(128, 128, 128, 10)
+	perlindata = noise.Perlin3D(128, 128, 128, 3)
 	perlintex2, err := texture.Make3DFromData(perlindata, 128, 128, 128, gl.RED, gl.RED)
 	if err != nil {
 		panic(err)
 	}
 
 	// generate 2D texture with curl noise
-	curldata := noise.Curl2D(128, 128, 10)
+	curldata := noise.Perlin2D(128, 128, 10)
 	curltex, err := texture.MakeFromData(curldata, 128, 128, gl.RGB, gl.RED)
 	if err != nil {
 		panic(err)
@@ -92,7 +92,7 @@ func main() {
 
 		// update camera
 		camera.Update()
-		M := mgl32.HomogRotate3DY(delta * math.Pi * 0.5)
+		M := mgl32.HomogRotate3DY(delta * math.Pi * 0.25)
 		V := camera.GetView()
 		P := camera.GetPerspective()
 
