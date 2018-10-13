@@ -49,15 +49,6 @@ func deriveY(data []uint8, x, y, width, height int) float32 {
 	return (f(data, xp, y, width) - f(data, xn, y, width)) / 2.0
 }
 
-// loop loops the value val between 0 and res-1
-func loop(val, res int) int {
-	newval := val % res
-	if newval < 0 {
-		newval = res + newval
-	}
-	return newval
-}
-
 func f(data []uint8, x, y, w int) float32 {
 	return float32(data[y*w+x]) / 255
 }
