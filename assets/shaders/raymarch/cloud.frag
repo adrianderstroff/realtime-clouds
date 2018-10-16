@@ -19,7 +19,7 @@ vec4 luminocity(vec4 color) {
     return vec4(0.21*color.r + 0.72*color.g + 0.07*color.b);
 }
 vec4 average(vec4 color) {
-    return vec4((color.r + color.g + color.b) / 3.0);
+    return vec4((color.r + color.g + color.b + color.a) / 4.0);
 }
 
 void main() {
@@ -40,8 +40,9 @@ void main() {
     vec3 pos = start;
     while(inside(pos, start, end)) {
         // calculate source
-        vec4 src = average(texture(noiseTex, pos));
-        //src.a *= 0.5;
+        //vec4 src = average(texture(noiseTex, pos));
+        vec4 src = texture(noiseTex, pos);
+        src.a *= 0.5;
         src.rgb *= src.a;
         dst = (1.0 - dst.a) * src + dst;
 

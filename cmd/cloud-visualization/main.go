@@ -40,11 +40,18 @@ func main() {
 	// setup fbos
 	fbo1 := fbo.Make(WIDTH, HEIGHT)
 
+	// generate cloud base texture
+	cloudbasetex, err := cloud.CloudBase(128, 128, 128)
+	if err != nil {
+		panic(err)
+	}
+
 	// generate 3D texture with worley noise
 	clouddetailtex, err := cloud.CloudDetail(32, 32, 32)
 	if err != nil {
 		panic(err)
 	}
+	_ = clouddetailtex
 
 	// setup raymarching pass
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, SHADER_PATH)
@@ -65,7 +72,8 @@ func main() {
 		P := camera.GetPerspective()
 
 		// do raymarching passes
-		raymarchingpass.Render(&fbo1, &clouddetailtex, M, V, P, 10)
+		//raymarchingpass.Render(&fbo1, &clouddetailtex, M, V, P, 10)
+		raymarchingpass.Render(&fbo1, &cloudbasetex, M, V, P, 10)
 
 		// copy textures to screen
 		fbo1.CopyToScreen(0, 0, 0, int32(WIDTH), int32(HEIGHT))
