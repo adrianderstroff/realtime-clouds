@@ -54,7 +54,7 @@ func MakeFromData(width, height, slices int, data []uint8) (Image3D, error) {
 
 	// create the individual images
 	var images []image2d.Image2D
-	size := width * height
+	size := width * height * channels
 	for i := 0; i < slices; i++ {
 		s, e := i*size, (i+1)*size
 		image, err := image2d.MakeFromData(width, height, data[s:e])

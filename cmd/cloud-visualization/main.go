@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/buffer/fbo"
-	"github.com/adrianderstroff/realtime-clouds/pkg/cloud"
 	"github.com/go-gl/mathgl/mgl32"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
@@ -41,13 +40,13 @@ func main() {
 	fbo1 := fbo.Make(WIDTH, HEIGHT)
 
 	// generate cloud base texture
-	cloudbasetex, err := cloud.CloudBase(128, 128, 128)
+	cloudbasetex, err := Make3DCloudTexture(TEX_PATH+"cloud-base/base", 128)
 	if err != nil {
 		panic(err)
 	}
 
 	// generate 3D texture with worley noise
-	clouddetailtex, err := cloud.CloudDetail(32, 32, 32)
+	clouddetailtex, err := Make3DCloudTexture(TEX_PATH+"cloud-detail/detail", 32)
 	if err != nil {
 		panic(err)
 	}
