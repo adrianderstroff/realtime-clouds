@@ -1,9 +1,5 @@
 package main
 
-import (
-	"github.com/adrianderstroff/realtime-clouds/pkg/cgm"
-)
-
 // mergeColorChannels interleaves the pixels of all provided one-channel images.
 func mergeColorChannels(images ...[]uint8) []uint8 {
 	channels := len(images)
@@ -19,11 +15,17 @@ func mergeColorChannels(images ...[]uint8) []uint8 {
 	return result
 }
 
-func combine(slice1, slice2 []uint8) []uint8 {
-	result := make([]uint8, len(slice1))
+func combine(images ...[]uint8) []uint8 {
+	size := len(images[0])
+	imageCount := len(images)
+	result := make([]uint8, size)
 
-	for i := 0; i < len(slice1); i++ {
-		result[i] = uint8(cgm.Lerp(float32(slice1[i]), float32(slice2[i]), 0.5))
+	for i := 0; i < size; i++ {
+		sum := 0.0
+		for j := 0; j < imageCount; j++ {
+			sum += float64(images[j][i])
+		}
+		result[i] = uint8(sum / float64(imageCount))
 	}
 
 	return result

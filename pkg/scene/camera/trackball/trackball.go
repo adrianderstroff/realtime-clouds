@@ -116,6 +116,11 @@ func (camera *Trackball) Zoom(distance float32) {
 	}
 }
 
+// GetPos returns the position of the camera in worldspace
+func (camera *Trackball) GetPos() mgl32.Vec3 {
+	return camera.Pos
+}
+
 // GetView returns the view matrix of the camera.
 func (camera *Trackball) GetView() mgl32.Mat4 {
 	return mgl32.LookAtV(camera.Pos, camera.Target, camera.Up)

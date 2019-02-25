@@ -50,5 +50,5 @@ func deriveY(data []uint8, x, y, width, height int) float32 {
 }
 
 func f(data []uint8, x, y, w int) float32 {
-	return float32(data[y*w+x]) / 255
+	return float32(data[y*w+x]) / 255.0
 }

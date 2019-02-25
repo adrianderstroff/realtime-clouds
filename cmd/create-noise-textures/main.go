@@ -52,4 +52,24 @@ func main() {
 		panic(err)
 	}
 	cloudTurbulenceImage.SaveToPath(TEX_PATH + "cloud-turbulence/turbulence.png")
+
+	// create cloud map
+	fmt.Println("Creating cloud map")
+	red := noise.Perlin2D(1024, 1024, 4)
+	blue := noise.Perlin2D(1024, 1024, 8)
+	cp1 := noise.Perlin2D(1024, 1024, 16)
+	cp2 := noise.Perlin2D(1024, 1024, 32)
+	cp3 := noise.Perlin2D(1024, 1024, 64)
+	cw1 := noise.Worley2D(1024, 1024, 16)
+	cw2 := noise.Worley2D(1024, 1024, 32)
+	cw3 := noise.Worley2D(1024, 1024, 64)
+	cpn := combine(cp1, cp2, cp3)
+	cwn := combine(cw1, cw2, cw3)
+	green := combine(cpn, cwn)
+	cloudMapData := mergeColorChannels(red, green, blue)
+	cloudMapImage, err := image2d.MakeFromData(1024, 1024, cloudMapData)
+	if err != nil {
+		panic(err)
+	}
+	cloudMapImage.SaveToPath(TEX_PATH + "cloud-map/cloud-map.png")
 }

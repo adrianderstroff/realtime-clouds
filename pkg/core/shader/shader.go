@@ -205,6 +205,11 @@ func (shader *Shader) Use() {
 	gl.UseProgram(shader.programHandle)
 }
 
+// Release unbinds the shader. Call it after calling Render.
+func (shader *Shader) Release() {
+	gl.UseProgram(0)
+}
+
 // Delete deletes the OpenGL Shader handle.
 func (shader *Shader) Delete() {
 	gl.DeleteProgram(shader.programHandle)

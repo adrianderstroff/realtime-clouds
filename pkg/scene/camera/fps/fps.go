@@ -26,6 +26,18 @@ type FPS struct {
 	Far    float32
 }
 
+// MakeDefault creates a FPS camera with the viewport of width and height and a position.
+// It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
+func MakeDefault(width, height int, pos mgl32.Vec3) FPS {
+	return Make(width, height, pos, 10, 45, 0.1, 100.0)
+}
+
+// NewDefault creates a reference to a FPS camera with the viewport of width and height and a position.
+// It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
+func NewDefault(width, height int, pos mgl32.Vec3) *FPS {
+	return New(width, height, pos, 10, 45, 0.1, 100.0)
+}
+
 // Make creates a FPS with the viewport of width and height and a radius from the origin.
 // It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
 func Make(width, height int, pos mgl32.Vec3, speed, fov, near, far float32) FPS {
@@ -101,6 +113,11 @@ func (camera *FPS) Rotate(theta, phi float32) {
 
 // Zoom changes the radius of the camera to the target point.
 func (camera *FPS) Zoom(distance float32) {}
+
+// GetPos returns the position of the camera in worldspace
+func (camera *FPS) GetPos() mgl32.Vec3 {
+	return camera.Pos
+}
 
 // GetView returns the view matrix of the camera.
 func (camera *FPS) GetView() mgl32.Mat4 {

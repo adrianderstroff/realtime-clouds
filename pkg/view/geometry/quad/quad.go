@@ -7,94 +7,30 @@ import (
 	geometry "github.com/adrianderstroff/realtime-clouds/pkg/view/geometry"
 )
 
-// MakeQuad creates a Quad with the specified width, height and depth.
-// If the normals should be inside the quad the inside parameter should be true.
-func Make(width, height, depth float32, inside bool) geometry.Geometry {
+// Make creates a Quad with the specified width and height on the x-y plane
+// with the normal pointing up the y-axis
+func Make(width, height float32) geometry.Geometry {
 	// half side lengths
 	halfWidth := width / 2.0
 	halfHeight := height / 2.0
-	halfDepth := depth / 2.0
 
 	// vertex positions
-	v1 := []float32{-halfWidth, halfHeight, halfDepth}
-	v2 := []float32{-halfWidth, -halfHeight, halfDepth}
-	v3 := []float32{halfWidth, halfHeight, halfDepth}
-	v4 := []float32{halfWidth, -halfHeight, halfDepth}
-	v5 := []float32{-halfWidth, halfHeight, -halfDepth}
-	v6 := []float32{-halfWidth, -halfHeight, -halfDepth}
-	v7 := []float32{halfWidth, halfHeight, -halfDepth}
-	v8 := []float32{halfWidth, -halfHeight, -halfDepth}
-	positions := geometry.Combine(
-		// right
-		v3, v4, v7,
-		v7, v4, v8,
-		// left
-		v5, v6, v1,
-		v1, v6, v2,
-		// top
-		v5, v1, v7,
-		v7, v1, v3,
-		// bottom
-		v2, v6, v4,
-		v4, v6, v8,
-		// front
-		v1, v2, v3,
-		v3, v2, v4,
-		// back
-		v7, v8, v5,
-		v5, v8, v6,
-	)
-	if inside {
-		positions = geometry.Combine(
-			// right
-			v7, v8, v3,
-			v3, v8, v4,
-			// left
-			v1, v2, v5,
-			v5, v2, v6,
-			// top
-			v7, v3, v5,
-			v5, v3, v1,
-			// bottom
-			v4, v8, v2,
-			v2, v8, v6,
-			// front
-			v3, v4, v1,
-			v1, v4, v2,
-			//back
-			v5, v6, v7,
-			v7, v6, v8,
-		)
-	}
+	v1 := []float32{-halfWidth, 0, halfHeight}
+	v2 := []float32{-halfWidth, 0, -halfHeight}
+	v3 := []float32{halfWidth, 0, halfHeight}
+	v4 := []float32{halfWidth, 0, -halfHeight}
+	positions := geometry.Combine(v1, v2, v3, v3, v2, v4)
 
 	// tex coordinates
 	t1 := []float32{0.0, 1.0}
 	t2 := []float32{0.0, 0.0}
 	t3 := []float32{1.0, 1.0}
 	t4 := []float32{1.0, 0.0}
-	uvs := geometry.Repeat(geometry.Combine(t1, t2, t3, t3, t2, t4), 6)
+	uvs := geometry.Combine(t1, t2, t3, t3, t2, t4)
 
 	// normals
-	right := []float32{1.0, 0.0, 0.0}
-	left := []float32{-1.0, 0.0, 0.0}
-	top := []float32{0.0, 1.0, 0.0}
-	bottom := []float32{0.0, -1.0, 0.0}
-	front := []float32{0.0, 0.0, -1.0}
-	back := []float32{0.0, 0.0, 1.0}
-	// swap normals if inside is true
-	if inside {
-		right, left = left, right
-		top, bottom = bottom, top
-		front, back = back, front
-	}
-	normals := geometry.Combine(
-		geometry.Repeat(right, 6),
-		geometry.Repeat(left, 6),
-		geometry.Repeat(top, 6),
-		geometry.Repeat(bottom, 6),
-		geometry.Repeat(front, 6),
-		geometry.Repeat(back, 6),
-	)
+	up := []float32{0.0, 1.0, 0.0}
+	normals := geometry.Repeat(up, 6)
 
 	// setup data
 	data := [][]float32{
