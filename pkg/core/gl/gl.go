@@ -169,6 +169,7 @@ var (
 	Uniform3fv              = ogl.Uniform3fv
 	UniformMatrix4fv        = ogl.UniformMatrix4fv
 	GetShaderiv             = ogl.GetShaderiv
+	ReadPixels              = ogl.ReadPixels
 )
 
 // Errors

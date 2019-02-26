@@ -28,14 +28,14 @@ type FPS struct {
 
 // MakeDefault creates a FPS camera with the viewport of width and height and a position.
 // It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
-func MakeDefault(width, height int, pos mgl32.Vec3) FPS {
-	return Make(width, height, pos, 10, 45, 0.1, 100.0)
+func MakeDefault(width, height int, pos mgl32.Vec3, speed float32) FPS {
+	return Make(width, height, pos, speed, 45, 0.1, 100.0)
 }
 
 // NewDefault creates a reference to a FPS camera with the viewport of width and height and a position.
 // It assumes a field of view of 45 degrees and a near and far plane at 0.1 and 100.0 respectively.
-func NewDefault(width, height int, pos mgl32.Vec3) *FPS {
-	return New(width, height, pos, 10, 45, 0.1, 100.0)
+func NewDefault(width, height int, pos mgl32.Vec3, speed float32) *FPS {
+	return New(width, height, pos, speed, 45, 0.1, 100.0)
 }
 
 // Make creates a FPS with the viewport of width and height and a radius from the origin.

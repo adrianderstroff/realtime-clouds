@@ -1,7 +1,8 @@
 #version 430
 
-const float PI   = 3.1415926535897932384626433832795;
-const float PI_2 = 1.57079632679489661923;
+const float PI        = 3.1415926535897932384626433832795;
+const float PI_2      = 2*PI;
+const float DEG_2_RAD = PI/180.0;
 
 layout(binding = 0) uniform sampler3D cloudBaseTex;
 layout(binding = 1) uniform sampler3D cloudDetailTex;
@@ -11,7 +12,7 @@ layout(binding = 3) uniform sampler2D cloudMapTex;
 uniform vec3 cameraPos;
 uniform mat4 M, V, P;
 uniform float width, height;
-uniform float near = 10;
+uniform float fov = 45.0;
 uniform vec3 windDir = vec3(1, 0, 1);
 
 in Vertex {
@@ -19,14 +20,6 @@ in Vertex {
 } i;
 
 out vec4 fragColor;
-
-// https://en.wikipedia.org/wiki/UV_mapping
-vec4 sampleCloudMap(in vec3 pos, in vec3 oSphere) {
-    vec3 dir = normalize(oSphere - pos);
-    float x = 0.5 + atan(dir.z, dir.x) / (2*PI);
-    float y = 0.5 - asin(dir.y) / PI;
-    return texture(cloudMapTex, vec2(x, y));
-}
 
 // maps one value from one interval [inMin,inMax] to another interval [outMin, outMax]
 float remap(in float val, in float inMin, in float inMax, in float outMin, in float outMax) {
@@ -44,7 +37,8 @@ void swap(inout float a, inout float b) {
 void ray(out vec3 o, out vec3 dir) {
     // calc image plane
     float ar = width / height;
-    vec2 imagePlane = (i.uv*2 - vec2(1)) * vec2(ar, 1);
+    float angle = tan(fov/2 * DEG_2_RAD);
+    vec2 imagePlane = (i.uv*2 - vec2(1)) * vec2(angle) * vec2(ar, 1);
 
     // extract camera space
     mat3 cameraToWorld = transpose(mat3(V));
@@ -101,6 +95,15 @@ vec4 sampleCloudBase(vec3 pos, float h) {
     float y = h;
     float z = mod(pos.z, 128) / 128;
     return texture(cloudBaseTex, vec3(x, y, z));
+}
+
+// https://en.wikipedia.org/wiki/UV_mapping
+vec4 sampleCloudMap(in vec3 pos, in vec3 oSphere) {
+    vec3 dir = normalize(oSphere - pos);
+    float x = 0.5 + atan(dir.z, dir.x) / (2*PI);
+    float y = 0.5 - asin(dir.y) / PI;
+    if (dir.y > 0.0) return vec4(0, 0, 0, 1);
+    return texture(cloudMapTex, vec2(x, y));
 }
 
 // returns the cloud density at the specified position
@@ -164,6 +167,7 @@ void main() {
     vec3 o, dir;
     ray(o, dir);
 
-    float t = intersectSphere(o, dir, vec3(0, 0, 0), 1400);
+    float t = intersectSphere(o, dir, vec3(0, 0, 0), 4000);
     fragColor = sampleCloudMap(o+t*dir, vec3(0, 0, 0));
+    if(t < 0) fragColor = vec4(1, 1, 1, 1);
 }

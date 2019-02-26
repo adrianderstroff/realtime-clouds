@@ -132,6 +132,20 @@ func MakeFromPath(path string) (Image2D, error) {
 	}, nil
 }
 
+func MakeFromFrameBuffer(width, height, channels int) (Image2D, error) {
+	data := make([]uint8, width*height*channels)
+	gl.ReadPixels(0, 0, int32(width), int32(height), gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(data))
+	img := Image2D{
+		pixelType: uint32(gl.UNSIGNED_BYTE),
+		width:     width,
+		height:    height,
+		channels:  channels,
+		data:      data,
+	}
+	img.FlipY()
+	return img, nil
+}
+
 // SaveToPath saves the image at the specified path in the png format.
 // The specified image path has to have the fileextension .png.
 // An error is thrown if the path is not valid or any of the specified
@@ -216,6 +230,70 @@ func (img *Image2D) SaveToPath(path string) error {
 	}
 
 	return nil
+}
+
+func (img *Image2D) ToImage() (image.Image, error) {
+	// write data back into the golang image format
+	rect := image.Rect(0, 0, img.width, img.height)
+	switch img.channels {
+	case 1:
+		// fill image data
+		out := image.NewGray(rect)
+		for y := 0; y < img.height; y++ {
+			for x := 0; x < img.width; x++ {
+				idx := img.getIdx(x, y)
+				out.Pix[idx] = img.data[idx]
+			}
+		}
+
+		return out, nil
+	case 2:
+		// fill image data
+		out := image.NewRGBA(rect)
+		for y := 0; y < img.height; y++ {
+			for x := 0; x < img.width; x++ {
+				idxsrc := img.getIdx(x, y)
+				idxdst := (x + y*img.width) * 4
+				out.Pix[idxdst] = img.data[idxsrc]
+				out.Pix[idxdst+1] = img.data[idxsrc+1]
+				out.Pix[idxdst+2] = 0
+				out.Pix[idxdst+3] = 255
+			}
+		}
+
+		return out, nil
+	case 3:
+		// fill image data
+		out := image.NewRGBA(rect)
+		for y := 0; y < img.height; y++ {
+			for x := 0; x < img.width; x++ {
+				idxsrc := img.getIdx(x, y)
+				idxdst := (x + y*img.width) * 4
+				out.Pix[idxdst] = img.data[idxsrc]
+				out.Pix[idxdst+1] = img.data[idxsrc+1]
+				out.Pix[idxdst+2] = img.data[idxsrc+2]
+				out.Pix[idxdst+3] = 255
+			}
+		}
+
+		return out, nil
+	case 4:
+		// fill image data
+		out := image.NewRGBA(rect)
+		for y := 0; y < img.height; y++ {
+			for x := 0; x < img.width; x++ {
+				idx := img.getIdx(x, y)
+				out.Pix[idx] = img.data[idx]
+				out.Pix[idx+1] = img.data[idx+1]
+				out.Pix[idx+2] = img.data[idx+2]
+				out.Pix[idx+3] = img.data[idx+3]
+			}
+		}
+		return out, nil
+	}
+
+	emptyRect := image.Rectangle{image.Point{0, 0}, image.Point{0, 0}}
+	return image.NewRGBA(emptyRect), errors.New("Unsupported number of channels")
 }
 
 // FlipX changes the order of the columns by swapping the first column of a row with the

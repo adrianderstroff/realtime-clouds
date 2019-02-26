@@ -13,6 +13,7 @@ const (
 	SHADER_PATH  = "./assets/shaders/"
 	TEX_PATH     = "./assets/images/textures/"
 	CUBEMAP_PATH = "./assets/images/cubemap/"
+	OUT_PATH     = "./"
 
 	WIDTH  int = 800
 	HEIGHT int = 600
@@ -30,7 +31,7 @@ func main() {
 	defer window.Close()
 
 	// make camera
-	camera := fps.MakeDefault(WIDTH, HEIGHT, mgl32.Vec3{1000, 0, 0})
+	camera := fps.MakeDefault(WIDTH, HEIGHT, mgl32.Vec3{300, 0, 0}, 20)
 	interaction.AddInteractable(&camera)
 
 	// make passes
