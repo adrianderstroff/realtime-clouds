@@ -31,8 +31,8 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	if err != nil {
 		panic(err)
 	}
-	//cloudmapfbo, err := texture.MakeFromPath(texpath+"cloud-map/cloud-map.png", gl.RGBA, gl.RGBA)
-	cloudmapfbo, err := texture.MakeFromPath(texpath+"debug.jpg", gl.RGBA, gl.RGBA)
+	cloudmapfbo, err := texture.MakeFromPath(texpath+"cloud-map/cloud-map.png", gl.RGBA, gl.RGBA)
+	//cloudmapfbo, err := texture.MakeFromPath(texpath+"debug.jpg", gl.RGBA, gl.RGBA)
 	if err != nil {
 		panic(err)
 	}

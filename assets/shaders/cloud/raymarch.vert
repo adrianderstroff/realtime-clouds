@@ -8,6 +8,6 @@ out Vertex {
 } o;
 
 void main() {
-    gl_Position = vec4(pos.xz, 0 , 1);
+    gl_Position = vec4(pos.xz, 0.99999, 1);
     o.uv = uv;
 }

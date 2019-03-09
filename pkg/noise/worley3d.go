@@ -88,7 +88,7 @@ func Worley3D(width, height, depth, res int) []uint8 {
 	for z := 0; z < depth; z++ {
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				val := cgm.Map(voxels[z][y][x], 0, maxdist, 255, 0)
+				val := cgm.Map(voxels[z][y][x], 0, maxdist, 0, 255)
 				data = append(data, uint8(val))
 			}
 		}

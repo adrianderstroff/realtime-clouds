@@ -2,6 +2,7 @@
 package box
 
 import (
+	"github.com/adrianderstroff/realtime-clouds/pkg/view/geometry/cube"
 	mesh "github.com/adrianderstroff/realtime-clouds/pkg/view/mesh"
 )
 

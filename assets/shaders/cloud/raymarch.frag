@@ -1,29 +1,100 @@
 #version 430
 
+//---------------------------------------------------------------------------------------//
+// constants                                                                             //
+//---------------------------------------------------------------------------------------//
 const float PI        = 3.1415926535897932384626433832795;
 const float PI_2      = 2*PI;
 const float DEG_2_RAD = PI/180.0;
 
+//---------------------------------------------------------------------------------------//
+// datastructures                                                                        //
+//---------------------------------------------------------------------------------------//
+struct Ray {
+    vec3 o;
+    vec3 dir;
+};
+
+struct Sphere {
+    vec3  o;
+    float r;
+};
+
+//---------------------------------------------------------------------------------------//
+// textures                                                                              //
+//---------------------------------------------------------------------------------------//
 layout(binding = 0) uniform sampler3D cloudBaseTex;
 layout(binding = 1) uniform sampler3D cloudDetailTex;
 layout(binding = 2) uniform sampler2D turbulenceTex;
 layout(binding = 3) uniform sampler2D cloudMapTex;
 
-uniform vec3 cameraPos;
-uniform mat4 M, V, P;
+//---------------------------------------------------------------------------------------//
+// uniforms                                                                              //
+//---------------------------------------------------------------------------------------//
+uniform vec3  cameraPos;
+uniform mat4  M, V, P;
 uniform float width, height;
 uniform float fov = 45.0;
-uniform vec3 windDir = vec3(1, 0, 1);
+uniform vec3  sunPos = vec3(40000, -20000, 0);
+uniform vec3  windDir = vec3(1, 0, 1);
+uniform Sphere innerSphere = Sphere(vec3(0, 0, 0), 14000);
+uniform Sphere outerSphere = Sphere(vec3(0, 0, 0), 40000);
 
+//---------------------------------------------------------------------------------------//
+// input                                                                                 //
+//---------------------------------------------------------------------------------------//
 in Vertex {
     vec2 uv;
 } i;
 
+//---------------------------------------------------------------------------------------//
+// output                                                                                //
+//---------------------------------------------------------------------------------------//
 out vec4 fragColor;
 
+
+
+//---------------------------------------------------------------------------------------//
+// utility functions                                                                     //
+//---------------------------------------------------------------------------------------//
 // maps one value from one interval [inMin,inMax] to another interval [outMin, outMax]
 float remap(in float val, in float inMin, in float inMax, in float outMin, in float outMax) {
     return (val - inMin)/(inMax - inMin) * (outMax - outMin) + outMin;
+}
+// clamps the input value to (inMin, inMax) and performs a remap
+float clampRemap(in float val, in float inMin, in float inMax, in float outMin, in float outMax) {
+    float clVal = clamp(val, inMin, inMax);
+    return (clVal - inMin)/(inMax - inMin) * (outMax - outMin) + outMin;
+}
+
+// maps a position pos on a sphere with origin oSphere to uv-coordinates
+// https://en.wikipedia.org/wiki/UV_mapping
+vec2 sphereUV(in vec3 pos, in Sphere sphere) {
+    vec3 dir = normalize(sphere.o - pos);
+    float x = 0.5 + atan(dir.z, dir.x) / (2*PI);
+    float y = 0.5 - asin(dir.y) / PI;
+    return vec2(x, y);
+}
+
+vec2 boundUV(in vec3 pos, vec2 size) {
+    float x = pos.x;
+    float y = pos.z;
+    
+    while(x < 0.0) { x += size.x; }
+    while(y < 0.0) { y += size.y; }
+
+    x = mod(x, size.x) / size.x;
+    y = mod(y, size.y) / size.y;
+
+    return vec2(x, y);
+}
+
+// calculates the relative height of a sample position pos within the atmospher defined
+// by the radii of the inner and outer sphere while the relative height is clamped
+// between 0 and 1
+float relativeHeight(in vec3 pos) {
+    float len = length(pos - innerSphere.o);
+    return clamp((len - innerSphere.r) / (outerSphere.r - innerSphere.r), 0.0, 1.0);
 }
 
 // swaps a and b
@@ -33,8 +104,13 @@ void swap(inout float a, inout float b) {
     a = t;
 }
 
+
+
+//---------------------------------------------------------------------------------------//
+// ray functions                                                                         //
+//---------------------------------------------------------------------------------------//
 // gets the ray origin and direction for the current fragment
-void ray(out vec3 o, out vec3 dir) {
+Ray calcRay() {
     // calc image plane
     float ar = width / height;
     float angle = tan(fov/2 * DEG_2_RAD);
@@ -43,24 +119,27 @@ void ray(out vec3 o, out vec3 dir) {
     // extract camera space
     mat3 cameraToWorld = transpose(mat3(V));
 
-    o = cameraPos;
-    //o = cameraToWorld * o;
+    // ray origin is position of camera
+    vec3 o = cameraPos;
 
-    vec3 pLocal = dir = vec3(imagePlane, -1);
+    // transform direction with view matrix
+    vec3 pLocal = vec3(imagePlane, -1);
     vec3 pWorld = cameraToWorld * pLocal;
-    dir = normalize(pWorld);
+    vec3 dir    = normalize(pWorld);
+
+    return Ray(o, dir);
 }
 
 // Returns the intersection of the closer intersection point of a ray with a sphere
 // @return a positive value if the sphere has been hit, while a negative value indicates no hit
 // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
-float intersectSphere(in vec3 oRay, in vec3 dRay, in vec3 oSphere, in float rSphere) {
-    vec3 L = oRay - oSphere;
+float intersectSphere(in Ray ray, in Sphere sphere) {
+    vec3 L = ray.o - sphere.o;
 
     // calculate the determinant to check for intersection
-    float a = dot(dRay, dRay);
-    float b = 2.0 * dot(dRay, L);
-    float c = dot(L, L) - (rSphere * rSphere);
+    float a = dot(ray.dir, ray.dir);
+    float b = 2.0 * dot(ray.dir, L);
+    float c = dot(L, L) - (sphere.r * sphere.r);
     float d = b*b - 4*a*c;
 
     // determine the intersection parameters t0, t1
@@ -71,7 +150,7 @@ float intersectSphere(in vec3 oRay, in vec3 dRay, in vec3 oSphere, in float rSph
         t0 = -0.5 * b/a;
         t1 = t0;
     } else {
-        float q = (b>0) ? 
+        float q = (b > 0) ? 
             -0.5 * (b + sqrt(d)) :
             -0.5 * (b - sqrt(d));
         t0 = q / a;
@@ -90,84 +169,233 @@ float intersectSphere(in vec3 oRay, in vec3 dRay, in vec3 oSphere, in float rSph
     return t0;
 }
 
-vec4 sampleCloudBase(vec3 pos, float h) {
-    float x = mod(pos.x, 128) / 128;
-    float y = h;
-    float z = mod(pos.z, 128) / 128;
-    return texture(cloudBaseTex, vec3(x, y, z));
+
+
+//---------------------------------------------------------------------------------------//
+// lighting                                                                              //
+//---------------------------------------------------------------------------------------//
+float beerLambert(float density) {
+    return max(exp(-density), 0.7*exp(-0.25*density));
 }
 
-// https://en.wikipedia.org/wiki/UV_mapping
-vec4 sampleCloudMap(in vec3 pos, in vec3 oSphere) {
-    vec3 dir = normalize(oSphere - pos);
-    float x = 0.5 + atan(dir.z, dir.x) / (2*PI);
-    float y = 0.5 - asin(dir.y) / PI;
-    if (dir.y > 0.0) return vec4(0, 0, 0, 1);
-    return texture(cloudMapTex, vec2(x, y));
+float henyeyGreenstein(float cosAngle, float eccentricity) {
+    float eccentricity2 = eccentricity*eccentricity;
+    return ((1.0 - eccentricity2) / pow(1.0 + eccentricity2 - 2.0*eccentricity*cosAngle, 3.0/2.0)) / (4*PI);
 }
 
-// returns the cloud density at the specified position
-float density(vec3 pos, float height) {
-    vec3 newPos = pos;
-    
-    vec4 cloudBase = sampleCloudBase(newPos, height);
+float inscatter(float density, float height) {
+    // attenuation along the in-scatter path
+    float depthProbability = 0.05 + pow(density, clampRemap(height, 0.3, 0.85, 0.5, 2.0));
+    // relax the attenuation over hight
+    float verticalProbability = pow(clampRemap(height, 0.07, 0.14, 0.1, 1.0), 0.8);
+    // both of those effects model the in-scatter probability
+    float inScatterProbability = depthProbability * verticalProbability;
+    return inScatterProbability;
+}
+
+float radiance(vec3 pos, float density, float height, float silverIntensity, float silverSpread) {
+    // we wanna calculate wether we look towards the sun or
+    // away from it and depending on the adapt the anisotropic
+    // scattering defined by the henyey-greenstein function
+    vec3 toSun = sunPos - pos;
+    vec3 toEye   = cameraPos - pos;
+    float cosAngle = dot(normalize(toSun), normalize(toEye));
+
+    // two henyey-greenstein functions were combined to have
+    // a highlight around the sun but also to retain silver
+    // lining highlights on the clouds that are 90 degrees
+    // away from the sun
+    float eccentricity = 0.6;
+    float HG1 = henyeyGreenstein(cosAngle, eccentricity);
+    float HG2 = henyeyGreenstein(cosAngle, 0.99 - silverSpread);
+    float hg = max(HG1, silverIntensity*HG2);
+
+    // calculate the out-scattering and obsorption of light
+    // that travels through the cloud
+    // this effect is direction dependent, it gets stronger
+    // the further the camera looks away from the sun
+    // TODO: add view dependent scaling
+    float bl = beerLambert(density);
+
+    // calcluate the in-scattering contribution which
+    // creates dark edges since less in-scattering is
+    // taking place or vice versa a lot of in-scattering
+    // happens in thicker parts of the cloud
+    // in addition are the bottoms of clouds darker since
+    // below them is no medium that scatters the light 
+    // back into the cloud bottom
+    float is = inscatter(density, height);
+
+    // the radiance at the position pos is the combination
+    // of attenuation, absorption/out-scattering and 
+    // in-scattering
+    return bl * hg * is;
+}
+
+
+
+//---------------------------------------------------------------------------------------//
+// height gradient                                                                       //
+//---------------------------------------------------------------------------------------//
+float cloudRemap(float h, float a, float b, float c) {
+    return clampRemap(h, 0, a, 0, 1) * clampRemap(h, b, c, 1, 0);
+}
+vec3 lerp3(float t) {
+    float x = clamp(1 - t*2, 0, 1);
+    float z = clamp((t-0.5)*2, 0, 1);
+    float y = 1 - x - z;
+    return vec3(x, y, z);
+}
+float heightGradient(float cloudType, float h) {
+    // calc cloud gradients
+    float a = cloudRemap(h, 0.1, 0.2, 0.3);
+    float b = cloudRemap(h, 0.2, 0.3, 0.5);
+    float c = cloudRemap(h, 0.1, 0.7, 0.8);
+    // calc weights
+    vec3 weights = lerp3(h);
+    return a*weights.x + b*weights.y + c*weights.z;
+}
+
+//---------------------------------------------------------------------------------------//
+// cone sampling                                                                         //
+//---------------------------------------------------------------------------------------//
+// calculate cone sampling similar to Meteoros
+// with the last sample being 3 times the 
+// unit cone size
+void coneSampling(inout vec3 coneSamples[5]) {
+    coneSamples[0] = vec3(0.1, 0.1, 0.0);
+    coneSamples[1] = vec3(0.2, 0.0, 0.2);
+    coneSamples[2] = vec3(0.4,-0.4, 0.0);
+    coneSamples[3] = vec3(0.8, 0.0,-0.8);
+    coneSamples[4] = vec3(3.0, 0.0, 0.0);
+}
+
+// creates a rotation matrix that rotates vector a onto 
+// vector b by performing a 2D rotation on the plane
+// with normal a x b
+// source: https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+mat3 coneRotationMatrix(in vec3 coneDir, in vec3 lightDir) {
+    vec3 a = normalize(coneDir);
+    vec3 b = normalize(lightDir);
+    return mat3(
+        dot(a, b)          , -length(cross(a, b)), 0.0,
+        length(cross(a, b)),  dot(a, b)          , 0.0,
+        0.0                ,  0.0                , 1.0
+    );
+}
+
+//---------------------------------------------------------------------------------------//
+// cloud density                                                                         //
+//---------------------------------------------------------------------------------------//
+vec4 sampleCloudMap(in vec3 pos) {
+    vec2 uv = sphereUV(pos, innerSphere);
+    uv = boundUV(pos, vec2(2000, 2000));
+    return texture(cloudMapTex, uv);
+}
+
+float sampleCloudBase(in vec3 pos, float h) {
+    // grab value from texture
+    vec2 uv = sphereUV(pos, innerSphere);
+    uv = boundUV(pos, vec2(2000, 2000));
+    vec4 cloudBase = texture(cloudBaseTex, vec3(uv, h));
+
+    // calculate low freq fbm
     float lowFreqNoise = cloudBase.r;
     float highFreqNoise = dot(cloudBase.gba, vec3(0.625, 0.25, 0.125));
-    lowFreqNoise = clamp(lowFreqNoise, highFreqNoise, 1.0);
-    float baseCloud = remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0);
-    baseCloud = clamp(baseCloud, 0, 1);
-    
-    return baseCloud;
+    float baseDensity = clampRemap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0);
+    baseDensity = clamp(baseDensity, 0, 1);
+
+    // extract cloud information
+    vec4  cloudInfo = sampleCloudMap(pos);
+    float coverage  = cloudInfo.r;
+    float cloudType = cloudInfo.b;
+
+    // apply height gradient
+    baseDensity *= heightGradient(cloudType, h);
+
+    return baseDensity;
 }
 
-void main2() {
+
+// returns the cloud density at the specified position
+float density(in vec3 pos, in float height, in vec3 coneSamples[5], out float cloudDepth) {
+    // offset position by wind direction and strength
+    vec3 newPos = pos;
+    
+    // get base density
+    float baseDensity = sampleCloudBase(pos, height) * 0.25;
+
+    // perform expensive sampling if ray is within cloud
+    if(baseDensity > 0.0) {
+        // calculate cloud detail density and erode it from
+        // the base density
+        // TODO
+
+        // calculate the rotation matrix for orienting the 
+        // cone in direction of the sun
+        vec3 toLight = normalize(sunPos - pos);
+        mat3 coneRot = coneRotationMatrix(vec3(1, 0, 0), toLight);
+
+        // perform cone sampling
+        float cloudDepth = 0.0;
+        for(int i = 0; i < 5; i++) {
+            vec3 coneSamplePos = pos + (coneRot * coneSamples[i] * 10);
+            float coneSampleHeight = relativeHeight(coneSamplePos);
+            cloudDepth += sampleCloudBase(coneSamplePos, coneSampleHeight);
+        }
+        baseDensity += cloudDepth;
+        baseDensity /= 6;
+    }
+    
+    return baseDensity;
+}
+
+//---------------------------------------------------------------------------------------//
+// entry point                                                                           //
+//---------------------------------------------------------------------------------------//
+void main() {
     // determine ray direction
-    vec3 o, dir;
-    ray(o, dir);
+    Ray ray = calcRay();
 
     // get start and end points of the horizon
-    float tInner = intersectSphere(o, dir, vec3(0, 0, 0), 1400);
-    float tOuter = intersectSphere(o, dir, vec3(0, 0, 0), 4000);
-
-    // this shouldn't happen
-    //if(tInner < 0 || tOuter < 0) discard;
+    float tInner = intersectSphere(ray, innerSphere);
+    float tOuter = intersectSphere(ray, outerSphere);
 
     // step size
     float stepSize = (tOuter - tInner) / 96.0;
 
+    // setup cone sample
+    vec3 coneSamples[5];
+    coneSampling(coneSamples);
+
     // perform ray marching
-    float light = 0;
+    float light        = 0.0;
+    float alpha = 0.0;
     float t = tInner;
-    int sampleCount = 0;
     while(t <= tOuter) {
         // get position within cloud layer
-        vec3 pos = o + dir*t;
+        vec3 pos = ray.o + ray.dir*t;
         float h = remap(t, tInner, tOuter, 0, 1);
-        sampleCount++;
 
         // calculate density
-        float d = density(pos, h);
+        float cloudDepth = 0.0;
+        alpha += density(pos, h, coneSamples, cloudDepth);
 
         // do light calculations
-        light += d;
+        light += radiance(pos, cloudDepth, h, 0.7, 1.0);
 
-        // do step
+        // advance ray position
         t += stepSize;
+
+        // early ray termination
+        if(alpha > 1.0) {
+            alpha = 1.0;
+            break;
+        }
     }
-    light /= sampleCount;
 
     // calculate light color from light
-    fragColor = vec4(light, light, light, 1);
-    if(tInner < 0 || tOuter < 0) fragColor = vec4(1, 0, 0, 1);
-    fragColor = sampleCloudMap(dir, vec3(0, 0, 0));
-}
-
-void main() {
-    // determine ray direction
-    vec3 o, dir;
-    ray(o, dir);
-
-    float t = intersectSphere(o, dir, vec3(0, 0, 0), 4000);
-    fragColor = sampleCloudMap(o+t*dir, vec3(0, 0, 0));
-    if(t < 0) fragColor = vec4(1, 1, 1, 1);
+    vec4 cloudColor = vec4(light, light, light, 1);
+    vec4 atmosphereColor = vec4(0, 0, 1, 1);
+    fragColor = mix(atmosphereColor, cloudColor, alpha);
 }

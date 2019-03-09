@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 pos;
 
 uniform mat4 M, V, P;
-uniform vec3 flatColor;
+uniform vec3 flatColor = vec3(1, 1, 1);
 
 out vec3 col0;
 

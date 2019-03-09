@@ -31,11 +31,12 @@ func main() {
 	defer window.Close()
 
 	// make camera
-	camera := fps.MakeDefault(WIDTH, HEIGHT, mgl32.Vec3{300, 0, 0}, 20)
+	camera := fps.MakeDefault(WIDTH, HEIGHT, mgl32.Vec3{5, 2, 0}, 20)
 	interaction.AddInteractable(&camera)
 
 	// make passes
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, TEX_PATH, SHADER_PATH)
+	landscapepass := MakeLandscapePass(SHADER_PATH)
 
 	// render loop
 	renderloop := func() {
@@ -46,7 +47,9 @@ func main() {
 		camera.Update()
 
 		// do raymarching passes
+		landscapepass.Render(&camera)
 		raymarchingpass.Render(&camera)
+
 	}
 	window.RunMainLoop(renderloop)
 }

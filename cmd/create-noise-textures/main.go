@@ -16,12 +16,12 @@ func main() {
 
 	// create cloud base texture
 	fmt.Println("Creating Cloud Base Shape")
-	p1 := noise.Perlin3D(128, 128, 128, 5)
-	w1 := noise.Worley3D(128, 128, 128, 5)
-	w2 := noise.Worley3D(128, 128, 128, 6)
-	w3 := noise.Worley3D(128, 128, 128, 7)
-	w4 := noise.Worley3D(128, 128, 128, 7)
-	pw1 := combine(p1, w1)
+	p1 := noise.Perlin3D(128, 128, 128, 4)
+	w1 := noise.Worley3D(128, 128, 128, 4)
+	w2 := noise.Worley3D(128, 128, 128, 8)
+	w3 := noise.Worley3D(128, 128, 128, 16)
+	w4 := noise.Worley3D(128, 128, 128, 32)
+	pw1 := remapAll(p1, w1)
 	cloudBaseData := mergeColorChannels(pw1, w2, w3, w4)
 	cloudBaseImage, err := image3d.MakeFromData(128, 128, 128, cloudBaseData)
 	if err != nil {

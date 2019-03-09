@@ -75,7 +75,7 @@ func Worley2D(width, height, res int) []uint8 {
 	// map distance to 0..255 and save in data slice
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			val := cgm.Map(voxels[y][x], 0, maxdist, 255, 0)
+			val := cgm.Map(voxels[y][x], 0, maxdist, 0, 255)
 			data = append(data, uint8(val))
 		}
 	}
