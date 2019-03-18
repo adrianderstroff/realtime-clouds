@@ -264,6 +264,14 @@ func (tex *Texture) GenMipmapNearest() {
 	tex.Unbind()
 }
 
+func (tex *Texture) SetWrap(s, t, r int32) {
+	tex.Bind(0)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, s)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, t)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, r)
+	tex.Unbind()
+}
+
 // Bind makes the texure available at the specified position.
 func (tex *Texture) Bind(index uint32) {
 	tex.texPos = gl.TEXTURE0 + index

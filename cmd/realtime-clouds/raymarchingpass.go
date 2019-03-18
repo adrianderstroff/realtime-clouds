@@ -18,7 +18,7 @@ type RaymarchingPass struct {
 }
 
 func MakeRaymarchingPass(width, height int, texpath, shaderpath string) RaymarchingPass {
-	// create fbos
+	// create textures
 	cloudbasefbo, err := texture.Make3DFromPath(MakePathsFromDirectory(texpath+"cloud-base/", "base", "png", 0, 127), gl.RGBA, gl.RGBA)
 	if err != nil {
 		panic(err)
@@ -37,6 +37,11 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 		panic(err)
 	}
 
+	// change wrap to repeat
+	cloudbasefbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+	clouddetailfbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+	cloudmapfbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
 	raymarchshader, err := shader.Make(shaderpath+"/cloud/raymarch.vert", shaderpath+"/cloud/raymarch.frag")
@@ -54,7 +59,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	}
 }
 
-func (rmp *RaymarchingPass) Render(camera camera.Camera) {
+func (rmp *RaymarchingPass) Render(camera camera.Camera, time int32) {
 	rmp.cloudbasefbo.Bind(0)
 	rmp.clouddetailfbo.Bind(1)
 	rmp.turbulencefbo.Bind(2)
@@ -67,6 +72,7 @@ func (rmp *RaymarchingPass) Render(camera camera.Camera) {
 	rmp.raymarchshader.UpdateMat4("M", mgl32.Ident4())
 	rmp.raymarchshader.UpdateMat4("V", camera.GetView())
 	rmp.raymarchshader.UpdateMat4("P", camera.GetPerspective())
+	rmp.raymarchshader.UpdateFloat32("uTime", float32(time))
 	rmp.raymarchshader.Render()
 	rmp.raymarchshader.Release()
 

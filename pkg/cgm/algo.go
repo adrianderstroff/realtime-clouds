@@ -2,6 +2,10 @@ package cgm
 
 // Map maps a value val in the range (smin,smax) to the range (dmin,dmax)
 func Map(val, smin, smax, dmin, dmax float32) float32 {
+	if smin == smax {
+		return dmax
+	}
+
 	return (val-smin)/(smax-smin)*(dmax-dmin) + dmin
 }
 

@@ -38,6 +38,8 @@ func main() {
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, TEX_PATH, SHADER_PATH)
 	landscapepass := MakeLandscapePass(SHADER_PATH)
 
+	var time int32 = 0
+
 	// render loop
 	renderloop := func() {
 		// update title
@@ -48,8 +50,9 @@ func main() {
 
 		// do raymarching passes
 		landscapepass.Render(&camera)
-		raymarchingpass.Render(&camera)
+		raymarchingpass.Render(&camera, time)
 
+		//time++
 	}
 	window.RunMainLoop(renderloop)
 }

@@ -65,6 +65,34 @@ func Worley3D(width, height, depth, res int) []uint8 {
 							zabs := loop(zcell+zd, res)
 							point := points[zabs][yabs][xabs]
 
+							// offset the point if its on the other side of
+							// the volume, this has to be done else the
+							// distance doesn't loop
+							var (
+								xoff float32 = 0
+								yoff float32 = 0
+								zoff float32 = 0
+							)
+							if xabs < xcell+xd {
+								xoff = xstep * float32(res)
+							}
+							if xcell+xd < 0 {
+								xoff = -xstep * float32(res)
+							}
+							if yabs < ycell+yd {
+								yoff = ystep * float32(res)
+							}
+							if ycell+yd < 0 {
+								yoff = -ystep * float32(res)
+							}
+							if zabs < zcell+zd {
+								zoff = zstep * float32(res)
+							}
+							if zcell+zd < 0 {
+								zoff = -zstep * float32(res)
+							}
+							point = point.Add(mgl32.Vec3{xoff, yoff, zoff})
+
 							// calc distance to this point
 							dist := point.Sub(voxel).Len()
 
@@ -84,11 +112,15 @@ func Worley3D(width, height, depth, res int) []uint8 {
 		}
 	}
 
+	maxdist *= 0.8
+
 	// map distance to 0..255 and save in data slice
 	for z := 0; z < depth; z++ {
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				val := cgm.Map(voxels[z][y][x], 0, maxdist, 0, 255)
+				val := voxels[z][y][x]
+				val = cgm.Clamp(float32(val), 0, maxdist)
+				val = cgm.Map(val, 0, maxdist, 255, 0)
 				data = append(data, uint8(val))
 			}
 		}

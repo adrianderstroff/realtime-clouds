@@ -20,14 +20,14 @@ func Worley2D(width, height, res int) []uint8 {
 	ystep := float32(height) / float32(res)
 
 	// position randomly exactly one point per cell
-	points := make([][]mgl32.Vec3, res)
+	points := make([][]mgl32.Vec2, res)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for y := 0; y < res; y++ {
-		points[y] = make([]mgl32.Vec3, res)
+		points[y] = make([]mgl32.Vec2, res)
 		for x := 0; x < res; x++ {
 			xr := cgm.Map(r.Float32(), 0, 1, float32(x)*xstep, float32(x+1)*xstep)
 			yr := cgm.Map(r.Float32(), 0, 1, float32(y)*ystep, float32(y+1)*ystep)
-			points[y][x] = mgl32.Vec3{xr, yr}
+			points[y][x] = mgl32.Vec2{xr, yr}
 		}
 	}
 
@@ -39,7 +39,7 @@ func Worley2D(width, height, res int) []uint8 {
 		voxels[y] = make([]float32, width)
 		for x := 0; x < width; x++ {
 			// center of current voxel
-			voxel := mgl32.Vec3{float32(x) + 0.5, float32(y) + 0.5}
+			voxel := mgl32.Vec2{float32(x) + 0.5, float32(y) + 0.5}
 
 			// get cell index of current voxel
 			xcell := int(cgm.Floor32(float32(x) / xstep))
@@ -54,6 +54,27 @@ func Worley2D(width, height, res int) []uint8 {
 					xabs := loop(xcell+xd, res)
 					yabs := loop(ycell+yd, res)
 					point := points[yabs][xabs]
+
+					// offset the point if its on the other side of
+					// the volume, this has to be done else the
+					// distance doesn't loop
+					var (
+						xoff float32 = 0
+						yoff float32 = 0
+					)
+					if xabs < xcell+xd {
+						xoff = xstep * float32(res)
+					}
+					if xcell+xd < 0 {
+						xoff = -xstep * float32(res)
+					}
+					if yabs < ycell+yd {
+						yoff = ystep * float32(res)
+					}
+					if ycell+yd < 0 {
+						yoff = -ystep * float32(res)
+					}
+					point = point.Add(mgl32.Vec2{xoff, yoff})
 
 					// calc distance to this point
 					dist := point.Sub(voxel).Len()
@@ -72,10 +93,14 @@ func Worley2D(width, height, res int) []uint8 {
 		}
 	}
 
+	maxdist *= 0.9
+
 	// map distance to 0..255 and save in data slice
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			val := cgm.Map(voxels[y][x], 0, maxdist, 0, 255)
+			val := voxels[y][x]
+			val = cgm.Clamp(float32(val), 0, maxdist)
+			val = cgm.Map(val, 0, maxdist, 255, 0)
 			data = append(data, uint8(val))
 		}
 	}

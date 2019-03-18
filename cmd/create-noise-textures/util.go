@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math"
+
 	"github.com/adrianderstroff/realtime-clouds/pkg/cgm"
 )
 
@@ -17,6 +19,14 @@ func mergeColorChannels(images ...[]uint8) []uint8 {
 	}
 
 	return result
+}
+
+func createAndFillImage(len int, val uint8) []uint8 {
+	var image []uint8
+	for i := 0; i < len; i++ {
+		image = append(image, val)
+	}
+	return image
 }
 
 func combine(images ...[]uint8) []uint8 {
@@ -42,9 +52,70 @@ func remapAll(image1 []uint8, image2 []uint8) []uint8 {
 	for i := 0; i < size; i++ {
 		val1 := float32(image1[i]) / 255.0
 		val2 := float32(image2[i]) / 255.0
-		val1 = cgm.Clamp(val1, 1-val2, 1.0)
-		res := cgm.Map(val1, 1-val2, 1.0, 0.0, 1.0)
+
+		val1 = cgm.Clamp(val1, val2, 1.0)
+		res := cgm.Map(val1, 0.0, 1.0, val2, 1.0)
 		result[i] = uint8(res * 255)
+	}
+
+	return result
+}
+
+func scale(image []uint8, scale float32) []uint8 {
+	size := len(image)
+	result := make([]uint8, size)
+
+	for i := 0; i < size; i++ {
+		val := float32(image[i]) * scale
+		val = cgm.Clamp(val, 0, 255)
+		result[i] = uint8(val)
+	}
+
+	return result
+}
+
+func invert(image []uint8) []uint8 {
+	size := len(image)
+	result := make([]uint8, size)
+
+	for i := 0; i < size; i++ {
+		result[i] = uint8(255 - image[i])
+	}
+
+	return result
+}
+
+func max(image []uint8) uint8 {
+	size := len(image)
+
+	var max uint8 = 0
+	for i := 0; i < size; i++ {
+		max = uint8(math.Max(float64(image[i]), float64(max)))
+	}
+
+	return max
+}
+
+func min(image []uint8) uint8 {
+	size := len(image)
+
+	var min uint8 = 255
+	for i := 0; i < size; i++ {
+		min = uint8(math.Min(float64(image[i]), float64(min)))
+	}
+
+	return min
+}
+
+func spread(image []uint8) []uint8 {
+	min := min(image)
+	max := max(image)
+
+	size := len(image)
+	result := make([]uint8, size)
+	for i := 0; i < size; i++ {
+		val := cgm.Map(float32(image[i]), float32(min), float32(max), float32(0), float32(255))
+		result[i] = uint8(val)
 	}
 
 	return result

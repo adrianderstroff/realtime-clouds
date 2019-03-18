@@ -7,7 +7,7 @@ import (
 
 func Curl2D(width, height, res int) []uint8 {
 	// create 2D perlin noise
-	perlin := Perlin2D(width, height, res)
+	perlin := Perlin2D(width, height, res, 1)
 
 	// calculate curl
 	var maxval float32 = 0
