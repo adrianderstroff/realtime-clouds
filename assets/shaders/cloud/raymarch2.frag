@@ -43,8 +43,8 @@ uniform float  fov              = 45.0;
 // sun
 uniform vec3   sunPos           = vec3(40000, -20000, 0);
 // atmosphere
-uniform Sphere innerSphere      = Sphere(vec3(0, 0, 0), 14000);
-uniform Sphere outerSphere      = Sphere(vec3(0, 0, 0), 40000);
+uniform float innerHeight      = 14000;
+uniform float outerHeight      = 40000;
 // animation
 uniform float  uTime            = 0;
 uniform float  uWindSpeed       = 10;
@@ -81,15 +81,6 @@ float clampRemap(in float val, in float inMin, in float inMax, in float outMin, 
     return (clVal - inMin)/(inMax - inMin) * (outMax - outMin) + outMin;
 }
 
-// maps a position pos on a sphere with origin oSphere to uv-coordinates
-// https://en.wikipedia.org/wiki/UV_mapping
-vec2 sphereUV(in vec3 pos, in Sphere sphere) {
-    vec3 dir = normalize(sphere.o - pos);
-    float x = 0.5 + atan(dir.z, dir.x) / (2*PI);
-    float y = 0.5 - asin(dir.y) / PI;
-    return vec2(x, y);
-}
-
 vec2 boundUV(in vec3 pos, vec2 size) {
     float x = pos.x;
     float y = pos.z;
@@ -103,12 +94,12 @@ vec2 boundUV(in vec3 pos, vec2 size) {
     return vec2(x, y);
 }
 
-// calculates the relative height of a sample position pos within the atmospher defined
-// by the radii of the inner and outer sphere while the relative height is clamped
+// calculates the relative height of a sample position pos within the atmosphere defined
+// by the inner and outer height of the athmosphere layers while the relative height is clamped
 // between 0 and 1
 float relativeHeight(in vec3 pos) {
-    float len = length(pos - innerSphere.o);
-    return clamp((len - innerSphere.r) / (outerSphere.r - innerSphere.r), 0.0, 1.0);
+    float len = length(pos.y - innerHeight) / (outerHeight - innerHeight);
+    return clamp(len, 0.0, 1.0);
 }
 
 // swaps a and b
@@ -144,43 +135,8 @@ Ray calcRay() {
     return Ray(o, dir);
 }
 
-// Returns the intersection of the closer intersection point of a ray with a sphere
-// @return a positive value if the sphere has been hit, while a negative value indicates no hit
-// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
-float intersectSphere(in Ray ray, in Sphere sphere) {
-    vec3 L = ray.o - sphere.o;
-
-    // calculate the determinant to check for intersection
-    float a = dot(ray.dir, ray.dir);
-    float b = 2.0 * dot(ray.dir, L);
-    float c = dot(L, L) - (sphere.r * sphere.r);
-    float d = b*b - 4*a*c;
-
-    // determine the intersection parameters t0, t1
-    float t0, t1;
-    if (d < 0.0) {
-        return -1.0;
-    } else if (d == 0) {
-        t0 = -0.5 * b/a;
-        t1 = t0;
-    } else {
-        float q = (b > 0) ? 
-            -0.5 * (b + sqrt(d)) :
-            -0.5 * (b - sqrt(d));
-        t0 = q / a;
-        t1 = c / q;
-    }
-    // t0 should be the smaller value
-    if(t0 > t1) swap(t0, t1);
-
-    // check if t0 and or t1 are negative, if t0 is negative then use t1
-    // instead and if both are negative then they are behind the ray origin
-    if(t0 < 0) {
-        t0 = t1;
-        if(t0 < 0) return -1;
-    }
-
-    return t0;
+float intersectLayer(in Ray ray, in float h) {
+    return (h - ray.o.y) / ray.dir.y;
 }
 
 
@@ -447,8 +403,8 @@ void main() {
     Ray ray = calcRay();
 
     // get start and end points of the horizon
-    float tInner = intersectSphere(ray, innerSphere);
-    float tOuter = intersectSphere(ray, outerSphere);
+    float tInner = intersectLayer(ray, innerHeight);
+    float tOuter = intersectLayer(ray, outerHeight);
 
     // step size
     float stepSize = (tOuter - tInner) / 30.0;

@@ -263,6 +263,10 @@ func (shader *Shader) GetHandle() uint32 {
 
 // loadFile returns the contents of a file as a zero terminated string.
 func loadFile(filepath string) (string, error) {
+	return LoadFileWithIncludes(filepath)
+}
+
+func loadFileOld(filepath string) (string, error) {
 	bytes, err := ioutil.ReadFile(filepath)
 
 	if err != nil {

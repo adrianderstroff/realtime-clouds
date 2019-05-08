@@ -44,7 +44,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
-	raymarchshader, err := shader.Make(shaderpath+"/cloud/raymarch.vert", shaderpath+"/cloud/raymarch.frag")
+	raymarchshader, err := shader.Make(shaderpath+"/cloud/raymarch.vert", shaderpath+"/cloud/raymarch2.frag")
 	if err != nil {
 		panic(err)
 	}

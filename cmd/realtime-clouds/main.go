@@ -37,6 +37,7 @@ func main() {
 	// make passes
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, TEX_PATH, SHADER_PATH)
 	landscapepass := MakeLandscapePass(SHADER_PATH)
+	_ = landscapepass
 
 	var time int32 = 0
 
@@ -49,7 +50,7 @@ func main() {
 		camera.Update()
 
 		// do raymarching passes
-		landscapepass.Render(&camera)
+		//landscapepass.Render(&camera)
 		raymarchingpass.Render(&camera, time)
 
 		//time++
