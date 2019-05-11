@@ -2,7 +2,6 @@ package shader
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,7 +14,6 @@ func loadFileWithIncludesRecursive(filename string, loadedpaths *map[string]bool
 
 	// early return since file had been loaded before
 	if _, ok := (*loadedpaths)[cleanpath]; ok {
-		fmt.Printf("File already processed")
 		return ""
 	}
 	(*loadedpaths)[cleanpath] = true
