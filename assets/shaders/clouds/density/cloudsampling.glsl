@@ -1,25 +1,11 @@
-const int   CLOUD_DOMAIN = 20000;
-const float BASE_DENSITY = 0.5;
-
-vec2 boundUV(in vec3 pos, vec2 size) {
-    float x = pos.x;
-    float y = pos.z;
-    
-    while(x < 0.0) { x += size.x; }
-    while(y < 0.0) { y += size.y; }
-
-    x = mod(x, size.x) / size.x;
-    y = mod(y, size.y) / size.y;
-
-    return vec2(x, y);
-}
+const int   CLOUD_DOMAIN = 40000;
+uniform float uGlobalDensity = 0.2;
 
 // calculates the relative height of a sample position pos within the atmosphere defined
 // by the inner and outer height of the athmosphere layers while the relative height is clamped
 // between 0 and 1
 float relativeHeight(in vec3 pos) {
-    float len = length(pos.y - innerHeight) / (outerHeight - innerHeight);
-    return clamp(len, 0.0, 1.0);
+    return clampRemap(pos.y, innerHeight, outerHeight, 0, 1);
 }
 
 float cloudRemap(float h, float a, float b, float c) {
@@ -32,7 +18,7 @@ float heightGradient(float cloudType, float h) {
     float b = cloudRemap(h, 0.2, 0.3, 0.5);
     float c = cloudRemap(h, 0.1, 0.7, 0.8);
     // calc weights
-    vec3 weights = lerp3(h);
+    vec3 weights = lerp3(cloudType);
     float cloudGradient = a*weights.x + b*weights.y + c*weights.z;
     return cloudGradient * h;
 }
@@ -71,7 +57,7 @@ float density(in vec3 pos, in float height) {
     vec3 newPos = pos;
     
     // get base density
-    float baseDensity = sampleCloudBase(pos, height) * BASE_DENSITY;
+    float baseDensity = sampleCloudBase(pos, height) * uGlobalDensity;
 
     // perform expensive sampling if ray is within cloud
     if(baseDensity > 0.0) {
@@ -81,35 +67,4 @@ float density(in vec3 pos, in float height) {
     }
     
     return baseDensity;
-}
-
-// returns the cloud depth around a position
-float getLODCloudDepth(in vec3 pos, float ds) {
-    // get sample positions around the position
-    vec3 p1 = pos + vec3(ds, 0, 0);
-    vec3 p2 = pos - vec3(ds, 0, 0);
-    vec3 p3 = pos + vec3( 0,ds, 0);
-    vec3 p4 = pos - vec3( 0,ds, 0);
-    vec3 p5 = pos + vec3( 0, 0,ds);
-    vec3 p6 = pos - vec3( 0, 0,ds);
-
-    // get relative height
-    float h1 = relativeHeight(p1);
-    float h2 = relativeHeight(p2);
-    float h3 = relativeHeight(p3);
-    float h4 = relativeHeight(p4);
-    float h5 = relativeHeight(p5);
-    float h6 = relativeHeight(p6);
-
-    // sum depth for all sampled positions
-    float sum = 0;
-    sum += density(p1, h1);
-    sum += density(p2, h2);
-    sum += density(p3, h3);
-    sum += density(p4, h4);
-    sum += density(p5, h5);
-    sum += density(p6, h6);
-    sum /= 6;
-
-    return sum;
 }

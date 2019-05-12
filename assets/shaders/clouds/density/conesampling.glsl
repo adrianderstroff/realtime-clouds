@@ -28,7 +28,7 @@ mat3 coneRotationMatrix(in vec3 coneDir, in vec3 lightDir) {
 // clouds further away
 float sampleConeDensity(in vec3 pos, in vec3 coneSamples[5]) {
     // calculate orientation towards the sun
-    vec3 toLight = normalize(sunPos - pos);
+    vec3 toLight = normalize(uSunPos - pos);
     mat3 coneRot = coneRotationMatrix(vec3(1, 0, 0), toLight);
 
     // sample density along cone

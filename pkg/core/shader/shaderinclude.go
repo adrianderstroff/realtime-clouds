@@ -2,6 +2,7 @@ package shader
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,6 +23,7 @@ func loadFileWithIncludesRecursive(filename string, loadedpaths *map[string]bool
 	file, err := os.Open(cleanpath)
 	defer file.Close()
 	if err != nil {
+		fmt.Println("Shaderinclude cannot find " + cleanpath)
 		return ""
 	}
 	reader := bufio.NewReader(file)

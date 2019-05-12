@@ -11,24 +11,23 @@ layout(binding = 3) uniform sampler2D cloudMapTex;
 // uniforms                                                                              //
 //---------------------------------------------------------------------------------------//
 // ray direction
-uniform vec3  uCameraPos;
-uniform mat4  M, V, P;
-uniform float width, height;
-uniform float fov              = 45.0;
+uniform vec3   cameraPos;
+uniform mat4   M, V, P;
+uniform float  width, height;
+uniform float  fov              = 45.0;
 // sun
-uniform vec3  uSunPos           = vec3(40000, -1000, 0);
+uniform vec3   sunPos           = vec3(40000, -20000, 0);
 // atmosphere
-uniform float innerHeight      = 14000;
-uniform float outerHeight      = 40000;
-uniform float extinctionCoeff  = 1.0/26000.0;
+uniform float innerHeight       = 14000;
+uniform float outerHeight       = 40000;
 // animation
-uniform float uTime            = 0;
-uniform float uWindSpeed       = 10;
-uniform vec3  windDir          = vec3(1, 0, 1);
+uniform float  uTime            = 0;
+uniform float  uWindSpeed       = 10;
+uniform vec3   windDir          = vec3(1, 0, 1);
 // colors
-uniform vec3  uSunColor        = vec3(1, 1, 0);
-uniform vec3  uAmbientColor    = vec3(1, 0, 0);
-uniform vec3  uAtmosphereColor = vec3(0.6, 0.7, 0.95);
+uniform vec3   uSunColor        = vec3(1, 0, 0);
+uniform vec3   uAmbientColor    = vec3(0.4, 0.4, 0.4);
+uniform vec3   uAtmosphereColor = vec3(0, 0, 1);
 
 //---------------------------------------------------------------------------------------//
 // input                                                                                 //
@@ -45,13 +44,13 @@ out vec4 fragColor;
 //---------------------------------------------------------------------------------------//
 // includes                                                                              //
 //---------------------------------------------------------------------------------------//
-#include "util/constants.glsl"
-#include "util/math.glsl"
-#include "util/ray.glsl"
-#include "density/cloudsampling.glsl"
-#include "density/conesampling.glsl"
-#include "lighting/lighting.glsl"
-#include "lighting/tonemapping.glsl"
+#include "constants.glsl"
+#include "ray.glsl"
+#include "util.glsl"
+#include "cloudsampling.glsl"
+#include "conesampling.glsl"
+#include "lighting.glsl"
+#include "tonemapping.glsl"
 
 //---------------------------------------------------------------------------------------//
 // helper functions                                                                      //
@@ -72,7 +71,11 @@ void main() {
     float tOuter = intersectLayer(ray, outerHeight);
 
     // step size
-    float stepSize = (tOuter - tInner) / 40.0;
+    float stepSize = (tOuter - tInner) / 30.0;
+
+    // setup cone sample
+    vec3 coneSamples[5];
+    coneSampling(coneSamples);
 
     // setup ray marching variables
     float alpha         = 0.0;
@@ -84,23 +87,32 @@ void main() {
     while(t <= tOuter) {
         // get position within cloud layer
         vec3 pos = ray.o + ray.dir*t;
-        float h = remap(pos.y, tInner, tOuter, 0, 1);
+        float h = remap(t, tInner, tOuter, 0, 1);
+
+        // offset by time where wind speed increases over height
+        pos += uWindSpeed *uTime * h;
 
         // calculate density and perform alpha blending
         float d = density(pos, h);
         alpha += (1-alpha)*d;
 
         // do light calculations and determine the color of the
+        // current sample using the color of the sun
         if(d > 0) {
-            transmittance *= exp(-extinctionCoeff * stepSize);
-            accumColor += radianceSimple(pos, h, 0.7, 1.0) * transmittance;
+            float lightEnergy = radiance(pos, coneSamples, h, 0.7, 1.0);
+            transmittance = mix(transmittance, lightEnergy, (1.0 - alpha));
+            vec3 directLightColor = uSunColor * transmittance;
+            accumColor += mix(directLightColor, uAmbientColor, clampRemap(h, 0.7, 1.0, 0.0, 1.0));
         }
 
         // advance ray position based on the current stepsize
         t += stepSize;
 
         // early ray termination
-        if(alpha > 1.0) { alpha = 1.0; break; }
+        if(alpha > 1.0) {
+            alpha = 1.0;
+            break;
+        }
     }
 
     // Blend and fade out clouds into the horizon (CHANGE THIRD PARAM IN REMAP)
@@ -110,6 +122,6 @@ void main() {
     // calculate light color from light
     fragColor = vec4(mix(uAtmosphereColor, accumColor, alpha), 1.0);
 
-    // tone mapping
-    //fragColor.xyz = toneMapping(fragColor.xyz);
+    // apply tone mapping
+    fragColor.xyz = toneMapping(fragColor.xyz);
 }

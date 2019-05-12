@@ -61,19 +61,21 @@ func createCloudMapTexture() {
 	red := noise.Perlin2D(1024, 1024, 4, 8)
 	red = spread(red)
 
-	cp1 := noise.Perlin2D(1024, 1024, 16, 1)
-	cp2 := noise.Perlin2D(1024, 1024, 32, 1)
-	cp3 := noise.Perlin2D(1024, 1024, 64, 1)
-	cw1 := noise.Worley2D(1024, 1024, 16)
-	cw2 := noise.Worley2D(1024, 1024, 32)
-	cw3 := noise.Worley2D(1024, 1024, 64)
-	cpn := combine(cp1, cp2, cp3)
-	cwn := combine(cw1, cw2, cw3)
-	_ = cpn
-	_ = cwn
+	/*
+		cp1 := noise.Perlin2D(1024, 1024, 16, 1)
+		cp2 := noise.Perlin2D(1024, 1024, 32, 1)
+		cp3 := noise.Perlin2D(1024, 1024, 64, 1)
+		cw1 := noise.Worley2D(1024, 1024, 16)
+		cw2 := noise.Worley2D(1024, 1024, 32)
+		cw3 := noise.Worley2D(1024, 1024, 64)
+		cpn := combine(cp1, cp2, cp3)
+		cwn := combine(cw1, cw2, cw3)
+		_ = cpn
+		_ = cwn
+	*/
 	green := createAndFillImage(1024*1024, 0) //combine(cpn, cwn)
 
-	blue := createAndFillImage(1024*1024, 0) //noise.Perlin2D(1024, 1024, 8)
+	blue := createAndFillImage(1024*1024, 125) //noise.Perlin2D(1024, 1024, 8)
 
 	cloudMapData := mergeColorChannels(red, green, blue)
 	cloudMapImage, err := image2d.MakeFromData(1024, 1024, cloudMapData)

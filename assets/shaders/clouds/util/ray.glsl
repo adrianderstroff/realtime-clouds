@@ -14,7 +14,7 @@ Ray calcRay() {
     mat3 cameraToWorld = transpose(mat3(V));
 
     // ray origin is position of camera
-    vec3 o = cameraPos;
+    vec3 o = uCameraPos;
 
     // transform direction with view matrix
     vec3 pLocal = vec3(imagePlane, -1);

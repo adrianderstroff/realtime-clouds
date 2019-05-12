@@ -36,6 +36,7 @@ func main() {
 
 	// make passes
 	raymarchingpass := MakeRaymarchingPass(WIDTH, HEIGHT, TEX_PATH, SHADER_PATH)
+	interaction.AddInteractable(&raymarchingpass)
 	landscapepass := MakeLandscapePass(SHADER_PATH)
 	_ = landscapepass
 

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"github.com/adrianderstroff/realtime-clouds/pkg/cgm"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/shader"
 	"github.com/adrianderstroff/realtime-clouds/pkg/scene/camera"
 	"github.com/adrianderstroff/realtime-clouds/pkg/view/mesh/plane"
 	"github.com/adrianderstroff/realtime-clouds/pkg/view/texture"
+	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -15,6 +17,8 @@ type RaymarchingPass struct {
 	turbulencefbo  texture.Texture
 	cloudmapfbo    texture.Texture
 	raymarchshader shader.Shader
+	// uniform variables
+	globaldensity float32
 }
 
 func MakeRaymarchingPass(width, height int, texpath, shaderpath string) RaymarchingPass {
@@ -44,7 +48,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
-	raymarchshader, err := shader.Make(shaderpath+"/cloud/raymarch.vert", shaderpath+"/cloud/raymarch2.frag")
+	raymarchshader, err := shader.Make(shaderpath+"/clouds/clouds.vert", shaderpath+"/clouds/clouds.frag")
 	if err != nil {
 		panic(err)
 	}
@@ -56,6 +60,8 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 		turbulencefbo:  turbulencefbo,
 		cloudmapfbo:    cloudmapfbo,
 		raymarchshader: raymarchshader,
+		// uniform variables
+		globaldensity: 0.2,
 	}
 }
 
@@ -80,4 +86,36 @@ func (rmp *RaymarchingPass) Render(camera camera.Camera, time int32) {
 	rmp.clouddetailfbo.Unbind()
 	rmp.turbulencefbo.Unbind()
 	rmp.cloudmapfbo.Unbind()
+}
+
+// OnCursorPosMove is a callback handler that is called every time the cursor moves.
+func (rmp *RaymarchingPass) OnCursorPosMove(x, y, dx, dy float64) bool {
+	return false
+}
+
+// OnMouseButtonPress is a callback handler that is called every time a mouse button is pressed or released.
+func (rmp *RaymarchingPass) OnMouseButtonPress(leftPressed, rightPressed bool) bool {
+	return false
+}
+
+// OnMouseScroll is a callback handler that is called every time the mouse wheel moves.
+func (rmp *RaymarchingPass) OnMouseScroll(x, y float64) bool {
+	return false
+}
+
+// OnKeyPress is a callback handler that is called every time a keyboard key is pressed.
+func (rmp *RaymarchingPass) OnKeyPress(key, action, mods int) bool {
+	if key == int(glfw.KeyQ) {
+		rmp.globaldensity -= 0.01
+	} else if key == int(glfw.KeyE) {
+		rmp.globaldensity += 0.01
+	}
+	rmp.globaldensity = cgm.Clamp(rmp.globaldensity, 0, 1)
+
+	// update uniforms
+	rmp.raymarchshader.Use()
+	rmp.raymarchshader.UpdateFloat32("uGlobalDensity", rmp.globaldensity)
+	rmp.raymarchshader.Release()
+
+	return false
 }
