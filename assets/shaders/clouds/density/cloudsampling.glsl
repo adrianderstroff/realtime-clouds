@@ -1,4 +1,4 @@
-const int   CLOUD_DOMAIN = 40000;
+const int   CLOUD_DOMAIN = 4000;
 uniform float uGlobalDensity = 0.2;
 
 // calculates the relative height of a sample position pos within the atmosphere defined

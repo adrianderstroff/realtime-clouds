@@ -14,13 +14,17 @@ const (
 
 func createCloudBaseTexture() {
 	fmt.Println("Creating Cloud Base Shape")
+	// red
 	p1 := noise.Perlin3D(128, 128, 128, 5, 8)
 	w1 := noise.Worley3D(128, 128, 128, 4)
-	w2 := createAndFillImage(128*128*128, 0)   //noise.Worley3D(128, 128, 128, 8)
-	w3 := createAndFillImage(128*128*128, 0)   //noise.Worley3D(128, 128, 128, 16)
-	w4 := createAndFillImage(128*128*128, 255) //noise.Worley3D(128, 128, 128, 32)
 	pw1 := remapAll(spread(p1), w1)
 	pw1 = w1
+	// green
+	w2 := noise.Worley3D(128, 128, 128, 8)
+	// blue
+	w3 := noise.Worley3D(128, 128, 128, 16)
+	// alpha
+	w4 := noise.Worley3D(128, 128, 128, 32)
 
 	cloudBaseData := mergeColorChannels(pw1, w2, w3, w4)
 	cloudBaseImage, err := image3d.MakeFromData(128, 128, 128, cloudBaseData)
@@ -58,8 +62,8 @@ func createCloudTurbulenceTexture() {
 
 func createCloudMapTexture() {
 	fmt.Println("Creating cloud map")
-	red := noise.Perlin2D(1024, 1024, 4, 8)
-	red = spread(red)
+	red := noise.Worley2D(1024, 1024, 8)
+	red = threshold(red, 200)
 
 	/*
 		cp1 := noise.Perlin2D(1024, 1024, 16, 1)
@@ -73,9 +77,9 @@ func createCloudMapTexture() {
 		_ = cpn
 		_ = cwn
 	*/
-	green := createAndFillImage(1024*1024, 0) //combine(cpn, cwn)
+	green := noise.Perlin2D(1024, 1024, 4, 8)
 
-	blue := createAndFillImage(1024*1024, 125) //noise.Perlin2D(1024, 1024, 8)
+	blue := createAndFillImage(1024*1024, 125)
 
 	cloudMapData := mergeColorChannels(red, green, blue)
 	cloudMapImage, err := image2d.MakeFromData(1024, 1024, cloudMapData)

@@ -120,3 +120,18 @@ func spread(image []uint8) []uint8 {
 
 	return result
 }
+
+func threshold(image []uint8, t uint8) []uint8 {
+	size := len(image)
+	result := make([]uint8, size)
+
+	for i := 0; i < size; i++ {
+		res := image[i]
+		if res < t {
+			res = 0
+		}
+		result[i] = res
+	}
+
+	return result
+}

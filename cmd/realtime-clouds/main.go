@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
@@ -54,7 +55,8 @@ func main() {
 		//landscapepass.Render(&camera)
 		raymarchingpass.Render(&camera, time)
 
-		//time++
+		time++
+		fmt.Println(time)
 	}
 	window.RunMainLoop(renderloop)
 }

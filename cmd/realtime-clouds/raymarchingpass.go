@@ -18,7 +18,8 @@ type RaymarchingPass struct {
 	cloudmapfbo    texture.Texture
 	raymarchshader shader.Shader
 	// uniform variables
-	globaldensity float32
+	globaldensity  float32
+	globalcoverage float32
 }
 
 func MakeRaymarchingPass(width, height int, texpath, shaderpath string) RaymarchingPass {
@@ -48,7 +49,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
-	raymarchshader, err := shader.Make(shaderpath+"/clouds/clouds.vert", shaderpath+"/clouds/clouds.frag")
+	raymarchshader, err := shader.Make(shaderpath+"/realtimeclouds/clouds.vert", shaderpath+"/realtimeclouds/clouds.frag")
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +62,8 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 		cloudmapfbo:    cloudmapfbo,
 		raymarchshader: raymarchshader,
 		// uniform variables
-		globaldensity: 0.2,
+		globaldensity:  0.5,
+		globalcoverage: 0.5,
 	}
 }
 
@@ -72,13 +74,13 @@ func (rmp *RaymarchingPass) Render(camera camera.Camera, time int32) {
 	rmp.cloudmapfbo.Bind(3)
 
 	rmp.raymarchshader.Use()
-	rmp.raymarchshader.UpdateVec3("cameraPos", camera.GetPos())
-	rmp.raymarchshader.UpdateFloat32("width", 800)
-	rmp.raymarchshader.UpdateFloat32("height", 600)
+	rmp.raymarchshader.UpdateVec3("uCamera.pos", camera.GetPos())
+	rmp.raymarchshader.UpdateMat4("uCamera.V", camera.GetView())
+	rmp.raymarchshader.UpdateMat4("uCamera.P", camera.GetPerspective())
+	rmp.raymarchshader.UpdateFloat32("uCamera.fov", 45.0)
+	rmp.raymarchshader.UpdateFloat32("uCamera.aspect", 800.0/600.0)
 	rmp.raymarchshader.UpdateMat4("M", mgl32.Ident4())
-	rmp.raymarchshader.UpdateMat4("V", camera.GetView())
-	rmp.raymarchshader.UpdateMat4("P", camera.GetPerspective())
-	rmp.raymarchshader.UpdateFloat32("uTime", float32(time))
+	rmp.raymarchshader.UpdateFloat32("uTime", float32(time*10))
 	rmp.raymarchshader.Render()
 	rmp.raymarchshader.Release()
 
@@ -105,6 +107,7 @@ func (rmp *RaymarchingPass) OnMouseScroll(x, y float64) bool {
 
 // OnKeyPress is a callback handler that is called every time a keyboard key is pressed.
 func (rmp *RaymarchingPass) OnKeyPress(key, action, mods int) bool {
+	// update global density
 	if key == int(glfw.KeyQ) {
 		rmp.globaldensity -= 0.01
 	} else if key == int(glfw.KeyE) {
@@ -112,9 +115,18 @@ func (rmp *RaymarchingPass) OnKeyPress(key, action, mods int) bool {
 	}
 	rmp.globaldensity = cgm.Clamp(rmp.globaldensity, 0, 1)
 
+	// update global coverage
+	if key == int(glfw.KeyY) {
+		rmp.globalcoverage -= 0.01
+	} else if key == int(glfw.KeyC) {
+		rmp.globalcoverage += 0.01
+	}
+	rmp.globalcoverage = cgm.Clamp(rmp.globalcoverage, 0, 1)
+
 	// update uniforms
 	rmp.raymarchshader.Use()
 	rmp.raymarchshader.UpdateFloat32("uGlobalDensity", rmp.globaldensity)
+	rmp.raymarchshader.UpdateFloat32("uGlobalCoverage", rmp.globalcoverage)
 	rmp.raymarchshader.Release()
 
 	return false
