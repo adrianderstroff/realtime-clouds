@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"runtime"
 
 	"github.com/adrianderstroff/realtime-clouds/pkg/core/interaction"
@@ -41,7 +40,7 @@ func main() {
 	landscapepass := MakeLandscapePass(SHADER_PATH)
 	_ = landscapepass
 
-	var time int32 = 0
+	var time float32 = 0
 
 	// render loop
 	renderloop := func() {
@@ -55,8 +54,7 @@ func main() {
 		//landscapepass.Render(&camera)
 		raymarchingpass.Render(&camera, time)
 
-		time++
-		fmt.Println(time)
+		time += 10
 	}
 	window.RunMainLoop(renderloop)
 }

@@ -43,9 +43,10 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	}
 
 	// change wrap to repeat
-	cloudbasefbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
-	clouddetailfbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
-	cloudmapfbo.SetWrap(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+	cloudbasefbo.SetWrap3D(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+	clouddetailfbo.SetWrap3D(gl.REPEAT, gl.REPEAT, gl.REPEAT)
+	turbulencefbo.SetWrap2D(gl.REPEAT, gl.REPEAT)
+	cloudmapfbo.SetWrap2D(gl.REPEAT, gl.REPEAT)
 
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
@@ -67,7 +68,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	}
 }
 
-func (rmp *RaymarchingPass) Render(camera camera.Camera, time int32) {
+func (rmp *RaymarchingPass) Render(camera camera.Camera, time float32) {
 	rmp.cloudbasefbo.Bind(0)
 	rmp.clouddetailfbo.Bind(1)
 	rmp.turbulencefbo.Bind(2)
@@ -80,7 +81,7 @@ func (rmp *RaymarchingPass) Render(camera camera.Camera, time int32) {
 	rmp.raymarchshader.UpdateFloat32("uCamera.fov", 45.0)
 	rmp.raymarchshader.UpdateFloat32("uCamera.aspect", 800.0/600.0)
 	rmp.raymarchshader.UpdateMat4("M", mgl32.Ident4())
-	rmp.raymarchshader.UpdateFloat32("uTime", float32(time*10))
+	rmp.raymarchshader.UpdateFloat32("uTime", time)
 	rmp.raymarchshader.Render()
 	rmp.raymarchshader.Release()
 
@@ -116,7 +117,7 @@ func (rmp *RaymarchingPass) OnKeyPress(key, action, mods int) bool {
 	rmp.globaldensity = cgm.Clamp(rmp.globaldensity, 0, 1)
 
 	// update global coverage
-	if key == int(glfw.KeyY) {
+	if key == int(glfw.KeyZ) {
 		rmp.globalcoverage -= 0.01
 	} else if key == int(glfw.KeyC) {
 		rmp.globalcoverage += 0.01

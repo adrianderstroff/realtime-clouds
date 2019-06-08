@@ -264,7 +264,23 @@ func (tex *Texture) GenMipmapNearest() {
 	tex.Unbind()
 }
 
-func (tex *Texture) SetWrap(s, t, r int32) {
+// Sets the behavior at the 1D texure borders
+func (tex *Texture) SetWrap1D(s int32) {
+	tex.Bind(0)
+	gl.TexParameteri(gl.TEXTURE_1D, gl.TEXTURE_WRAP_S, s)
+	tex.Unbind()
+}
+
+// Sets the behavior at the 2D texure borders
+func (tex *Texture) SetWrap2D(s, t int32) {
+	tex.Bind(0)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, s)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, t)
+	tex.Unbind()
+}
+
+// Sets the behavior at the 3D texure borders
+func (tex *Texture) SetWrap3D(s, t, r int32) {
 	tex.Bind(0)
 	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, s)
 	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, t)

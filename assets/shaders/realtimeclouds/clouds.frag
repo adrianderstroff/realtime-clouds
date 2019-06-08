@@ -32,7 +32,7 @@ uniform float  uGlobalCoverage   = 0.5;
 // animation
 uniform float  uTime             = 0;
 uniform float  uWindSpeed        = 10;
-uniform vec3   uWindDir          = vec3(1, 0, 1);
+uniform vec3   uWindDir          = vec3(1, 0, 0);
 // colors
 uniform vec3   uSunColor         = vec3(1, 1, 0);
 uniform vec3   uAmbientColor     = vec3(1, 0, 0);
@@ -96,4 +96,8 @@ void main() {
 
     // calculate light color from light
     fragColor = vec4(vec3(alpha), 1.0);
+
+    // debug
+    //vec3 startpos = (ray.o + ray.dir*tInner) / 4000;
+    //fragColor = texture(cloudMapTex, startpos.xz);
 }
