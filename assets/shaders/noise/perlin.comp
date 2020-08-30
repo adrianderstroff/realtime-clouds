@@ -1,0 +1,123 @@
+#version 430
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout(binding = 0) uniform image2D uPerlinTexture;
+layout(std430, binding = 0) buffer Permutations { float uP[ ]; };
+
+uniform int   uWidth;
+uniform int   uHeight;
+uniform int   uResolution;
+
+uniform int   uOctaves;
+uniform float uScale;
+uniform float uPersistance;
+
+uniform int   uZ;
+uniform int   uRepeat;
+
+uniform float uBrightness;
+uniform float uContrast;
+
+vec4 saturate(vec4 color) {
+    return max(vec4(0), min(color, vec4(1)));
+}
+
+float fade(float t) {
+	return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+float grad(int hash, float x, float y, float z) {
+	int h = hash & 15;                      
+	
+	float u = (h < 8) ? x : y;
+	u = (h&1) == 0 ? u : -u;
+
+	float v = (h < 4) ? y : ((h==12) || (h==14)) ? x : z;
+    v = (h&2) == 0 ? v : -v;
+
+	return u + v;
+}
+
+int p(int idx) {
+	return int(uP[idx]);
+}
+
+vec4 perlin(ivec2 pos, int ires) {
+	// get lower byte of the integer positions
+	int X = int(floor(pos.x)) & 255;                  
+    int Y = int(floor(pos.y)) & 255;                  
+    int Z = int(floor(uZ))    & 255;
+
+	// get relative position within cell
+	float x = pos.x - floor(pos.x);
+    float y = pos.y - floor(pos.y);
+    float z = uZ    - floor(uZ);
+
+	// what are we interpolating here? TODO check algorithm
+	float u = fade(x);
+    float v = fade(y);
+    float w = fade(z);
+
+	// TODO also check what this does
+	int  A = p(X)   + Y;
+	int AA = p(A)   + Z;
+	int AB = p(A+1) + Z;
+    int  B = p(X+1) + Y;
+	int BA = p(B)   + Z;
+	int BB = p(B+1) + Z;
+
+	// bilinear interpolations
+	float aaba1 = mix(grad(p(AA  ), x  , y  , z   ), grad(p(BA  ), x-1, y  , z   ), u);
+	float abbb1 = mix(grad(p(AB  ), x  , y-1, z   ), grad(p(BB  ), x-1, y-1, z   ), u);
+	float s = mix(aaba1, abbb1, v);
+
+	float aaba2 = mix(grad(p(AA+1), x  , y  , z-1 ), grad(p(BA+1), x-1, y  , z-1 ), u);
+	float abbb2 = mix(grad(p(AB+1), x  , y-1, z-1 ), grad(p(BB+1), x-1, y-1, z-1 ), u);
+	float t = mix(aaba2, abbb2, v);
+
+	// trilinear interpolation
+	float res = mix(s, t, w);
+
+	return vec4(res, res, res, 1.0);
+}
+
+vec4 fbm(ivec2 pos) {
+    float scale = 1;
+    float amplitude = 1;
+    float maxValue = amplitude;
+
+    vec4 tmp = perlin(pos, int(scale*uResolution));
+    
+    for(int i = 1; i < uOctaves; i++) {
+        scale     *= uScale;
+        amplitude *= uPersistance;
+        maxValue  += amplitude;
+
+        vec4 curPerlin = perlin(pos, int(scale*uResolution));
+        tmp += curPerlin*amplitude;
+    }
+
+    tmp /= maxValue;
+    tmp = saturate(tmp);
+
+    return tmp;
+}
+
+vec4 applyBrightnessContrast(vec4 color) {
+    color.rgb = ((color.rgb - 0.5f) * max(uContrast, 0)) + 0.5f;
+    color.rgb += uBrightness;
+    return color;
+}
+
+void main() {
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 color = fbm(pos);
+    color = applyBrightnessContrast(color);
+
+    imageStore(uPerlinTexture, pos, color);
+
+	vec4 dummy = vec4(p(pos.x)/255, p(pos.y)/255, 0, 1);
+	imageStore(uPerlinTexture, pos, dummy);
+}

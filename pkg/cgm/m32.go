@@ -31,3 +31,8 @@ func Floor32(a float32) float32 {
 func Mod32(a, b float32) float32 {
 	return float32(math.Mod(float64(a), float64(b)))
 }
+
+// Pow32 is a float32 variant of math.Pow which is float64
+func Pow32(a, b float32) float32 {
+	return float32(math.Pow(float64(a), float64(b)))
+}

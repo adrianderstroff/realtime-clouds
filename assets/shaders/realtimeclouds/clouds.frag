@@ -85,7 +85,8 @@ void main() {
 
         // calculate density and perform alpha blending
         float d = density(pos, h, uWindDir, uTime, uGlobalCoverage, uGlobalDensity);
-        alpha += (1-alpha)*d;
+        //alpha += (1-alpha)*d;
+        alpha += d;
 
         // advance ray position based on the current stepsize
         t += stepSize;

@@ -46,6 +46,12 @@ func Enable(val uint32) {
 	state[val] = true
 }
 
+// ForcedEnable changes the state of the specified value without checking the previous value.
+func ForcedEnable(val uint32) {
+	ogl.Enable(val)
+	state[val] = true
+}
+
 // Disable changes the state of the specified value.
 // If the state of this value is already false then nothing happens.
 func Disable(val uint32) {
@@ -170,6 +176,7 @@ var (
 	UniformMatrix4fv        = ogl.UniformMatrix4fv
 	GetShaderiv             = ogl.GetShaderiv
 	ReadPixels              = ogl.ReadPixels
+	MemoryBarrier           = ogl.MemoryBarrier
 )
 
 // Errors
@@ -332,6 +339,42 @@ const (
 	UNSIGNED_INT_8_8_8_8_REV         = ogl.UNSIGNED_INT_8_8_8_8_REV
 	UNSIGNED_INT_10_10_10_2          = ogl.UNSIGNED_INT_10_10_10_2
 	UNSIGNED_INT_2_10_10_10_REV      = ogl.UNSIGNED_INT_2_10_10_10_REV
+	RGBA32F                          = ogl.RGBA32F
+	RGBA16F                          = ogl.RGBA16F
+	RG32F                            = ogl.RG32F
+	RG16F                            = ogl.RG16F
+	R32F                             = ogl.R32F
+	R16F                             = ogl.R16F
+	RGBA32UI                         = ogl.RGBA32UI
+	RGBA16UI                         = ogl.RGBA16UI
+	RGBA8UI                          = ogl.RGBA8UI
+	RG32UI                           = ogl.RG32UI
+	RG16UI                           = ogl.RG16UI
+	RG8UI                            = ogl.RG8UI
+	R32UI                            = ogl.R32UI
+	R16UI                            = ogl.R16UI
+	R8UI                             = ogl.R8UI
+	RGBA32I                          = ogl.RGBA32I
+	RGBA16I                          = ogl.RGBA16I
+	RGBA8I                           = ogl.RGBA8I
+	RG32I                            = ogl.RG32I
+	RG16I                            = ogl.RG16I
+	RG8I                             = ogl.RG8I
+	R32I                             = ogl.R32I
+	R16I                             = ogl.R16I
+	R8I                              = ogl.R8I
+	RGBA16                           = ogl.RGBA16
+	RGBA8                            = ogl.RGBA8
+	RG16                             = ogl.RG16
+	RG8                              = ogl.RG8
+	R16                              = ogl.R16
+	R8                               = ogl.R8
+	RGBA16_SNORM                     = ogl.RGBA16_SNORM
+	RGBA8_SNORM                      = ogl.RGBA8_SNORM
+	RG16_SNORM                       = ogl.RG16_SNORM
+	RG8_SNORM                        = ogl.RG8_SNORM
+	R16_SNORM                        = ogl.R16_SNORM
+	R8_SNORM                         = ogl.R8_SNORM
 	TEXTURE0                         = ogl.TEXTURE0
 	TEXTURE1                         = ogl.TEXTURE1
 	TEXTURE2                         = ogl.TEXTURE2
@@ -408,6 +451,8 @@ const (
 	COLOR_ATTACHMENT15               = ogl.COLOR_ATTACHMENT15
 	DEPTH_ATTACHMENT                 = ogl.DEPTH_ATTACHMENT
 	READ_ONLY                        = ogl.READ_ONLY
+	WRITE_ONLY                       = ogl.WRITE_ONLY
+	READ_WRITE                       = ogl.READ_WRITE
 	VERTEX_SHADER                    = ogl.VERTEX_SHADER
 	FRAGMENT_SHADER                  = ogl.FRAGMENT_SHADER
 	GEOMETRY_SHADER                  = ogl.GEOMETRY_SHADER
@@ -427,4 +472,5 @@ const (
 	TRIANGLE_STRIP_ADJACENCY         = ogl.TRIANGLE_STRIP_ADJACENCY
 	TRIANGLES_ADJACENCY              = ogl.TRIANGLES_ADJACENCY
 	PATCHES                          = ogl.PATCHES
+	ALL_BARRIER_BITS                 = ogl.ALL_BARRIER_BITS
 )

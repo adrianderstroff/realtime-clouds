@@ -1,0 +1,128 @@
+#version 430
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout(binding = 0)          uniform image2D uPerlinTexture;
+layout(binding = 1, rgba32f) uniform image2D uSeedPositions;
+
+uniform int   uWidth;
+uniform int   uHeight;
+uniform int   uResolution;
+uniform int   uOctaves;
+uniform float uRadius;
+
+uniform float uScale;
+uniform float uPersistance;
+
+uniform float uBrightness;
+uniform float uContrast;
+
+#include "random.glsl"
+
+vec4 saturate(vec4 color) {
+    return max(vec4(0), min(color, vec4(1)));
+}
+
+// loop loops the value val between 0 and res-1
+ivec2 loop(ivec2 cell, ivec2 res) {
+    ivec2 tmp =  min(ivec2(0), cell);
+    tmp = ivec2(mod(res + tmp, res));
+    tmp = max(tmp, cell);
+	return ivec2(mod(tmp, res));
+}
+
+vec2 getCellParticle(ivec2 cell, ivec2 res) {
+    ivec2 pos = cell * (ivec2(uWidth, uHeight)/res);
+    return imageLoad(uSeedPositions, pos).xy;
+}
+
+vec2 neighborParticle(ivec2 cell, vec2 cellSize, ivec2 res) {
+    // get position of point in current neighborhood cell. make sure to loop at the edges
+    ivec2 ncell = loop(cell, res);
+    // grab the particle position for that cell. 
+    vec2 point = getCellParticle(ncell, res);
+    // calculate absolute particle position within uncorrected cell. the particle position is in [0, 1] so scale it to 
+    // [0, cellSize]
+    return (cell+ point) * cellSize ;
+}
+
+vec4 worley(ivec2 pos, int ires) {
+    // center of current voxel
+    vec2 voxel = pos + vec2(0.5);
+
+    // determine step
+    ivec2 res = ivec2(ires);
+    vec2 cellSize = vec2(float(uWidth)/res.x, float(uHeight)/res.y);
+
+    // get cell index of current voxel
+    ivec2 cell = ivec2(vec2(pos) / cellSize);
+
+    // get the particle position of each neighbor cell of the 9-neighborhood
+    vec2 p1 = neighborParticle(cell+ivec2(-1,-1), cellSize, res);
+    vec2 p2 = neighborParticle(cell+ivec2( 0,-1), cellSize, res);
+    vec2 p3 = neighborParticle(cell+ivec2( 1,-1), cellSize, res);
+
+    vec2 p4 = neighborParticle(cell+ivec2(-1, 0), cellSize, res);
+    vec2 p5 = neighborParticle(cell+ivec2( 0, 0), cellSize, res);
+    vec2 p6 = neighborParticle(cell+ivec2( 1, 0), cellSize, res);
+
+    vec2 p7 = neighborParticle(cell+ivec2(-1, 1), cellSize, res);
+    vec2 p8 = neighborParticle(cell+ivec2( 0, 1), cellSize, res);
+    vec2 p9 = neighborParticle(cell+ivec2( 1, 1), cellSize, res);
+
+    // calc distance to each particle in the 9-neighborhood    
+    float mindist = min(uWidth,  length(voxel - p1));
+    mindist       = min(mindist, length(voxel - p2));
+    mindist       = min(mindist, length(voxel - p3));
+
+    mindist       = min(mindist, length(voxel - p4));
+    mindist       = min(mindist, length(voxel - p5));
+    mindist       = min(mindist, length(voxel - p6));
+
+    mindist       = min(mindist, length(voxel - p7));
+    mindist       = min(mindist, length(voxel - p8));
+    mindist       = min(mindist, length(voxel - p9));
+
+    // derive brightness from distance and invert the color
+    float luminance = (min(mindist, uRadius) / uRadius);
+
+    return vec4(luminance, luminance, luminance, 1);
+}
+
+vec4 fbm(ivec2 pos) {
+    float scale = 1;
+    float amplitude = 1;
+    float maxValue = amplitude;
+
+    vec4 tmp = worley(pos, int(scale*uResolution));
+    
+    for(int i = 1; i < uOctaves; i++) {
+        scale *= uScale;
+        amplitude *= uPersistance;
+        maxValue += amplitude;
+
+        vec4 curWorley = worley(pos, int(scale*uResolution));
+        // code for combining the different octaves by FengBruce from 
+        // https://gamedev.stackexchange.com/questions/127906/how-to-layer-the-worley-noise-like-this
+        tmp = tmp + (1-curWorley)*amplitude;
+    }
+    tmp /= maxValue;
+    tmp = saturate(tmp);
+
+    return tmp;
+}
+
+vec4 applyBrightnessContrast(vec4 color) {
+    color.rgb = ((color.rgb - 0.5f) * max(uContrast, 0)) + 0.5f;
+    color.rgb += uBrightness;
+    return color;
+}
+
+void main() {
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    
+    vec4 color = fbm(pos);
+    color = applyBrightnessContrast(color);
+
+    imageStore(uPerlinTexture, pos, 1-color);
+}

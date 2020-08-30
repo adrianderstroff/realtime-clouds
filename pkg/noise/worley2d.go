@@ -9,10 +9,10 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-// Worley3D creates 3D worley noise of the size specified by length x width x height
+// Worley2D creates 3D worley noise of the size specified by length x width x height
 // with the specified resolution.
 // It returns a 1D slice of uint8 values between 0 and 255.
-func Worley2D(width, height, res int) []uint8 {
+func Worley2D(width, height, res int, radius float32) []uint8 {
 	data := []uint8{}
 
 	// divide volume into cells
@@ -33,7 +33,7 @@ func Worley2D(width, height, res int) []uint8 {
 
 	// for each voxel find shortest distance to point in 27-neighborhood
 	// loop at the edges to have tileable noise
-	var maxdist float32 = 0
+	//var maxdist float32 = 0
 	voxels := make([][]float32, height)
 	for y := 0; y < height; y++ {
 		voxels[y] = make([]float32, width)
@@ -89,11 +89,12 @@ func Worley2D(width, height, res int) []uint8 {
 
 			// bookkeeping of the biggest smallest distance for the following
 			// normalization step
-			maxdist = cgm.Max32(maxdist, mindist)
+			//maxdist = cgm.Max32(maxdist, mindist)
 		}
 	}
 
-	maxdist *= 0.9
+	//maxdist *= 0.9
+	maxdist := radius
 
 	// map distance to 0..255 and save in data slice
 	for y := 0; y < height; y++ {

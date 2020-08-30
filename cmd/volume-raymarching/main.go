@@ -59,19 +59,19 @@ func main() {
 	}
 
 	// generate 3D texture with perlin noise
-	perlindata := noise.Perlin3D(128, 128, 128, 1)
+	perlindata := noise.Perlin3D(128, 128, 128, 2, 16)
 	perlintex, err := texture.Make3DFromData(perlindata, 128, 128, 128, gl.RED, gl.RED)
 	if err != nil {
 		panic(err)
 	}
-	perlindata = noise.Perlin3D(128, 128, 128, 3)
+	perlindata = noise.Perlin3D(128, 128, 128, 3, 1)
 	perlintex2, err := texture.Make3DFromData(perlindata, 128, 128, 128, gl.RED, gl.RED)
 	if err != nil {
 		panic(err)
 	}
 
 	// generate 2D texture with curl noise
-	curldata := noise.Perlin2D(128, 128, 10)
+	curldata := noise.Perlin2D(128, 128, 10, 1)
 	curltex, err := texture.MakeFromData(curldata, 128, 128, gl.RGB, gl.RED)
 	if err != nil {
 		panic(err)

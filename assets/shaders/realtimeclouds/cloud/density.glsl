@@ -15,8 +15,16 @@ vec3 loop(in vec3 pos, float bounds) {
 float density(in vec3 pos, float h, in vec3 windDir, float time, float globalCoverage, float globalDensity) {
     vec3 p = loop(pos, CLOUD_LAYER_WIDTH);
 
-    // extract cloud information
-    vec3 poff = loop(pos + windDir*time, CLOUD_LAYER_WIDTH);
+    // calculate the sample offset based on the wind direction and height. clouds move faster the higher in the cloud
+    // space we sample. also because the textures we use are finite, we have to loop the sample offset to get an offset
+    // that is in bounds of the cloud map texture
+    vec3 off = windDir*time;
+    off += windDir*h*500;
+    vec3 poff = loop(pos + off, CLOUD_LAYER_WIDTH);
+    // sample the texture at the offset position and then extract the different color components of the sample as the
+    // cloud coverage for low and hight frequencies as well as the type of the cloud
+    
+    // TODO read again what low and high coverage actually means
     vec4  cloudInfo = texture(cloudMapTex, poff.xz);
     float lowCoverage  = cloudInfo.r;
     float highCoverage = cloudInfo.g;

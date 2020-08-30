@@ -28,19 +28,22 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	if err != nil {
 		panic(err)
 	}
+	cloudbasefbo.GenMipmap()
 	clouddetailfbo, err := texture.Make3DFromPath(MakePathsFromDirectory(texpath+"cloud-detail/", "detail", "png", 0, 31), gl.RGBA, gl.RGBA)
 	if err != nil {
 		panic(err)
 	}
+	clouddetailfbo.GenMipmap()
 	turbulencefbo, err := texture.MakeFromPath(texpath+"cloud-turbulence/turbulence.png", gl.RGBA, gl.RGBA)
 	if err != nil {
 		panic(err)
 	}
-	cloudmapfbo, err := texture.MakeFromPath(texpath+"cloud-map/cloud-map.png", gl.RGBA, gl.RGBA)
+	cloudmapfbo, err := texture.MakeFromPath(texpath+"cloud-map/cloud-map3.png", gl.RGB, gl.RGBA)
 	//cloudmapfbo, err := texture.MakeFromPath(texpath+"debug.jpg", gl.RGBA, gl.RGBA)
 	if err != nil {
 		panic(err)
 	}
+	cloudmapfbo.GenMipmap()
 
 	// change wrap to repeat
 	cloudbasefbo.SetWrap3D(gl.REPEAT, gl.REPEAT, gl.REPEAT)
@@ -50,7 +53,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 
 	// create shaders
 	plane := plane.Make(2, 2, gl.TRIANGLES)
-	raymarchshader, err := shader.Make(shaderpath+"/realtimeclouds/clouds.vert", shaderpath+"/realtimeclouds/clouds.frag")
+	raymarchshader, err := shader.Make(shaderpath+"/realtimeclouds/clouds.vert", shaderpath+"/realtimeclouds/test.frag")
 	if err != nil {
 		panic(err)
 	}
@@ -68,6 +71,7 @@ func MakeRaymarchingPass(width, height int, texpath, shaderpath string) Raymarch
 	}
 }
 
+// Render draws the clouds
 func (rmp *RaymarchingPass) Render(camera camera.Camera, time float32) {
 	rmp.cloudbasefbo.Bind(0)
 	rmp.clouddetailfbo.Bind(1)

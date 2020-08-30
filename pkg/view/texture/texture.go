@@ -241,6 +241,17 @@ func Make3DFromData(data []uint8, width, height, slices int, internalformat int3
 		gl.UNSIGNED_BYTE, gl.Ptr(data), gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE), nil
 }
 
+func (tex *Texture) Replace(width, height int, internalformat int32, format, pixelType uint32, data unsafe.Pointer) {
+	// generate and bind texture
+	tex.Bind(0)
+
+	// specify a texture image
+	gl.TexImage2D(tex.target, 0, internalformat, int32(width), int32(height), 0, format, pixelType, data)
+
+	// unbind texture
+	tex.Unbind()
+}
+
 // Delete destroys the Texture.
 func (tex *Texture) Delete() {
 	gl.DeleteTextures(1, &tex.handle)

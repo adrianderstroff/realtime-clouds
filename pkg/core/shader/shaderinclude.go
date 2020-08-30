@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+func trimComments(line string) string {
+	regcomment := regexp.MustCompile(`(//.*)?`)
+	res := regcomment.ReplaceAllString(line, "")
+	return res
+}
+
 func loadFileWithIncludesRecursive(filename string, loadedpaths *map[string]bool) string {
 	// simplify filepath to consistently find duplicate includes
 	cleanpath := filepath.Clean(filename)
@@ -36,7 +42,11 @@ func loadFileWithIncludesRecursive(filename string, loadedpaths *map[string]bool
 	for {
 		line, err := reader.ReadString('\n')
 
-		if matched, _ := regexp.MatchString(`#include`, line); matched {
+		// remove comments from the current line
+		linenocomments := trimComments(line)
+
+		if matched, _ := regexp.MatchString(`#include`, linenocomments); matched {
+
 			// extract the relative file path
 			relativepath := exp.FindString(line)
 			relativepath = strings.Trim(relativepath, "\"")
@@ -61,6 +71,8 @@ func loadFileWithIncludesRecursive(filename string, loadedpaths *map[string]bool
 	return shadersource
 }
 
+// LoadFileWithIncludes resolves file includes and returns the resulting shader
+// source
 func LoadFileWithIncludes(filepath string) (string, error) {
 	loadedpaths := make(map[string]bool)
 	return loadFileWithIncludesRecursive(filepath, &loadedpaths) + "\000", nil

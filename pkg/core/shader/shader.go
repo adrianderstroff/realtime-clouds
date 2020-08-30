@@ -18,7 +18,7 @@ type Shader struct {
 	renderables   []Renderable
 }
 
-// MakeProgram contrusts a Shader that consists of a vertex and fragment shader.
+// Make contrusts a Shader that consists of a vertex and fragment shader.
 func Make(vertexShaderPath, fragmentShaderPath string) (Shader, error) {
 	// loads files
 	vertexShaderSource, err := loadFile(vertexShaderPath)
