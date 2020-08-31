@@ -25,7 +25,7 @@ const (
 type State struct {
 	// perlin
 	useperlin    bool
-	octaves      int32
+	poctaves     int32
 	pbrightness  float32
 	pcontrast    float32
 	prepeat      int32
@@ -34,6 +34,7 @@ type State struct {
 	ppersistance float32
 	// worley
 	useworley    bool
+	woctaves     int32
 	resolution   int32
 	radius       float32
 	wbrightness  float32
@@ -67,8 +68,7 @@ func main() {
 	state := State{
 		// perlin
 		useperlin:    true,
-		octaves:      1,
-		threshold:    120,
+		poctaves:     1,
 		pbrightness:  0,
 		pcontrast:    0.5,
 		prepeat:      2,
@@ -77,12 +77,15 @@ func main() {
 		ppersistance: 1,
 		// worley
 		useworley:    true,
+		woctaves:     1,
 		resolution:   16,
 		radius:       70,
 		wbrightness:  0,
 		wcontrast:    0.5,
 		wscale:       1,
 		wpersistance: 1,
+		// general
+		threshold: 120,
 		// state
 		dirty: false,
 	}
@@ -128,13 +131,12 @@ func main() {
 		// gui
 		gamegui.Begin()
 		if gamegui.BeginWindow("Options", 0, 0, 250, float32(HEIGHT)) {
-			if gamegui.BeginGroup("Perlin", 380) {
+			if gamegui.BeginGroup("Perlin", 350) {
 				gamegui.Checkbox("Use Perlin", &state.useperlin)
-				gamegui.SliderInt32("Resolution", &state.resolution, 1, 64, 1)
 				gamegui.SliderInt32("Repeat", &state.prepeat, 1, 10, 1)
 				gamegui.SliderInt32("Z", &state.pz, 0, 1024, 1)
 				gamegui.Label("Fbm")
-				gamegui.SliderInt32("Octaves", &state.octaves, 1, 5, 1)
+				gamegui.SliderInt32("Octaves", &state.poctaves, 1, 5, 1)
 				gamegui.SliderFloat32("Scale", &state.pscale, 1, 3, 0.01)
 				gamegui.SliderFloat32("Persistance", &state.ppersistance, 0, 1, 0.01)
 				gamegui.Label("Post")
@@ -142,11 +144,12 @@ func main() {
 				gamegui.SliderFloat32("Contrast", &state.pcontrast, 0, 1, 0.01)
 				gamegui.EndGroup()
 			}
-			if gamegui.BeginGroup("Worley", 320) {
+			if gamegui.BeginGroup("Worley", 360) {
 				gamegui.Checkbox("Use Worley", &state.useworley)
 				gamegui.SliderInt32("Resolution", &state.resolution, 1, 64, 1)
 				gamegui.SliderFloat32("Radius", &state.radius, 0, 200, 0.1)
 				gamegui.Label("Fbm")
+				gamegui.SliderInt32("Octaves", &state.woctaves, 1, 5, 1)
 				gamegui.SliderFloat32("Scale", &state.wscale, 1, 3, 0.01)
 				gamegui.SliderFloat32("Persistance", &state.wpersistance, 0, 1, 0.01)
 				gamegui.Label("Post")

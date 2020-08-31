@@ -3,11 +3,10 @@
 layout (local_size_x = 1, local_size_y = 1) in;
 
 layout(binding = 0) uniform image2D uPerlinTexture;
-layout(std430, binding = 0) buffer Permutations { float uP[ ]; };
+layout(std430, binding = 1) buffer Permutations { int uP[]; };
 
 uniform int   uWidth;
 uniform int   uHeight;
-uniform int   uResolution;
 
 uniform int   uOctaves;
 uniform float uScale;
@@ -31,28 +30,33 @@ float grad(int hash, float x, float y, float z) {
 	int h = hash & 15;                      
 	
 	float u = (h < 8) ? x : y;
-	u = (h&1) == 0 ? u : -u;
+	u = ((h&1) == 0) ? u : -u;
 
-	float v = (h < 4) ? y : ((h==12) || (h==14)) ? x : z;
-    v = (h&2) == 0 ? v : -v;
+	float v = (h < 4) ? y : (((h==12) || (h==14)) ? x : z);
+    v = ((h&2) == 0) ? v : -v;
 
 	return u + v;
 }
 
 int p(int idx) {
-	return int(uP[idx]);
+	return uP[idx];
 }
 
-vec4 perlin(ivec2 pos, int ires) {
+vec4 perlin(vec3 pos, float repeat) {
+	// repeat
+	pos.x = modf(pos.x, repeat);
+	pos.y = modf(pos.y, repeat);
+	pos.z = modf(pos.z, repeat);
+
 	// get lower byte of the integer positions
 	int X = int(floor(pos.x)) & 255;                  
     int Y = int(floor(pos.y)) & 255;                  
-    int Z = int(floor(uZ))    & 255;
+    int Z = int(floor(pos.z)) & 255;
 
 	// get relative position within cell
 	float x = pos.x - floor(pos.x);
     float y = pos.y - floor(pos.y);
-    float z = uZ    - floor(uZ);
+    float z = pos.z - floor(pos.z);
 
 	// what are we interpolating here? TODO check algorithm
 	float u = fade(x);
@@ -83,25 +87,33 @@ vec4 perlin(ivec2 pos, int ires) {
 }
 
 vec4 fbm(ivec2 pos) {
-    float scale = 1;
+    float frequency = 1;
     float amplitude = 1;
     float maxValue = amplitude;
+	float repeat = 1;
+	vec4 total = vec4(0);
 
-    vec4 tmp = perlin(pos, int(scale*uResolution));
+	// normalize position between 0 and 1 
+	vec3 p3 = vec3(pos, uZ) / vec3(uWidth-1, uHeight-1, uWidth-1);
+
+	// calculate first perlin level
+    //vec4 tmp = perlin(p3, repeat);
     
-    for(int i = 1; i < uOctaves; i++) {
-        scale     *= uScale;
+	// calculate the other octaves
+    for(int i = 0; i < uOctaves; i++) {
+        frequency *= uScale;
         amplitude *= uPersistance;
         maxValue  += amplitude;
+		repeat    *= 2;
 
-        vec4 curPerlin = perlin(pos, int(scale*uResolution));
-        tmp += curPerlin*amplitude;
+        total += perlin(p3 * frequency, repeat) * amplitude;
     }
 
-    tmp /= maxValue;
-    tmp = saturate(tmp);
+	// normalize and clamp value
+    total /= maxValue;
+    total = saturate(total);
 
-    return tmp;
+    return total;
 }
 
 vec4 applyBrightnessContrast(vec4 color) {
@@ -118,6 +130,7 @@ void main() {
 
     imageStore(uPerlinTexture, pos, color);
 
-	vec4 dummy = vec4(p(pos.x)/255, p(pos.y)/255, 0, 1);
-	imageStore(uPerlinTexture, pos, dummy);
+	// int x = int(float(pos.x)/(uWidth-1) * 255);
+	// vec4 dummy = vec4(p(x)/255.0, 0, 0, 1);
+	// imageStore(uPerlinTexture, pos, dummy);
 }

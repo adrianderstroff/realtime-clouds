@@ -7,6 +7,26 @@ import (
 	gl "github.com/adrianderstroff/realtime-clouds/pkg/core/gl"
 )
 
+const (
+	Int   int = 4
+	Int8  int = 1
+	Int16 int = 2
+	Int32 int = 4
+	Int64 int = 8
+
+	UInt   int = 4
+	UInt8  int = 1
+	UInt16 int = 2
+	UInt32 int = 4
+	UInt64 int = 8
+
+	Float32 int = 4
+	Float64 int = 8
+
+	Complex64  int = 8
+	Complex128 int = 16
+)
+
 // SSBO is a buffer that can hold different kinds of data.
 // The typesize specifies the byte size of one element and len specifes the number of elements.
 type SSBO struct {
@@ -145,6 +165,24 @@ func (ssbo *SSBO) UploadValueInRange(value []float32, start, len int) {
 // UploadArray replaces the data on the GPU with the data in values.
 // Make sure that the size of values matches the bytesize*len of the SSBO.
 func (ssbo *SSBO) UploadArray(values []float32) {
+	// upload array content to ssbo
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo.handle)
+	gl.BufferData(gl.SHADER_STORAGE_BUFFER, ssbo.typesize*ssbo.len, gl.Ptr(values), gl.DYNAMIC_COPY)
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, 0)
+}
+
+// UploadArrayI replaces the data on the GPU with the data in values.
+// Make sure that the size of values matches the bytesize*len of the SSBO.
+func (ssbo *SSBO) UploadArrayI(values []int) {
+	// upload array content to ssbo
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo.handle)
+	gl.BufferData(gl.SHADER_STORAGE_BUFFER, ssbo.typesize*ssbo.len, gl.Ptr(values), gl.DYNAMIC_COPY)
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, 0)
+}
+
+// UploadArrayI32 replaces the data on the GPU with the data in values.
+// Make sure that the size of values matches the bytesize*len of the SSBO.
+func (ssbo *SSBO) UploadArrayI32(values []int32) {
 	// upload array content to ssbo
 	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo.handle)
 	gl.BufferData(gl.SHADER_STORAGE_BUFFER, ssbo.typesize*ssbo.len, gl.Ptr(values), gl.DYNAMIC_COPY)

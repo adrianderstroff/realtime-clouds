@@ -35,7 +35,7 @@ func MakePerlin(shaderpath string) Perlin {
 	}
 
 	// create permuations buffer
-	var permutation = []int{
+	var permutation = []int32{
 		151, 160, 137, 91, 90, 15,
 		131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
 		190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33,
@@ -51,13 +51,14 @@ func MakePerlin(shaderpath string) Perlin {
 		138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180,
 	}
 
-	var p [512]float32
+	var p = make([]int32, 512)
+	permlen := len(permutation)
 	for i := 0; i < 512; i++ {
-		p[i] = float32(permutation[i%len(permutation)])
+		p[i] = permutation[i%permlen]
 	}
 
-	permuationsbuffer := ssbo.Make(32, len(p))
-	permuationsbuffer.UploadArray(p[:])
+	permuationsbuffer := ssbo.Make(ssbo.Int32, len(p))
+	permuationsbuffer.UploadArrayI32(p)
 
 	return Perlin{
 		computeshader: computeshader,
@@ -83,7 +84,7 @@ func MakePerlin(shaderpath string) Perlin {
 // UpdateState updates the worley noise parameters
 func (p *Perlin) UpdateState(state *State) {
 	p.resolution = state.resolution
-	p.octaves = state.octaves
+	p.octaves = state.poctaves
 	p.brightness = state.pbrightness
 	p.contrast = state.pcontrast
 	p.scale = state.pscale
@@ -93,19 +94,18 @@ func (p *Perlin) UpdateState(state *State) {
 // GenerateTexture populates the texture with a worley noise
 func (p *Perlin) GenerateTexture(tex *texture.Texture) {
 	gl.BindImageTexture(0, tex.GetHandle(), 0, false, 0, gl.READ_WRITE, gl.RGBA32F)
-	p.permuations.Bind(0)
+	p.permuations.Bind(1)
 
 	p.computeshader.Use()
 	p.computeshader.UpdateInt32("uWidth", p.width)
 	p.computeshader.UpdateInt32("uHeight", p.height)
-	p.computeshader.UpdateInt32("uResolution", p.resolution)
 	p.computeshader.UpdateInt32("uOctaves", p.octaves)
 	p.computeshader.UpdateFloat32("uBrightness", p.brightness)
 	p.computeshader.UpdateFloat32("uContrast", p.contrast)
 	p.computeshader.UpdateFloat32("uScale", p.scale)
 	p.computeshader.UpdateFloat32("uPersistance", p.persistance)
+	p.computeshader.UpdateInt32("uZ", p.z)
 	p.computeshader.Compute(uint32(p.width), uint32(p.height), 1)
-	p.computeshader.Compute(1024, 1024, 1)
 	p.computeshader.Release()
 	gl.BindImageTexture(0, 0, 0, false, 0, gl.WRITE_ONLY, gl.RGBA32F)
 	p.permuations.Unbind()

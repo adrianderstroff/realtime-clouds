@@ -55,7 +55,7 @@ func MakeWorley(shaderpath string) Worley {
 // UpdateState updates the worley noise parameters
 func (w *Worley) UpdateState(state *State) {
 	w.resolution = state.resolution
-	w.octaves = state.octaves
+	w.octaves = state.woctaves
 	w.radius = state.radius
 	w.brightness = state.wbrightness
 	w.contrast = state.wcontrast
