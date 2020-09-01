@@ -26,9 +26,9 @@ type State struct {
 	// perlin
 	useperlin    bool
 	poctaves     int32
+	presolution  int32
 	pbrightness  float32
 	pcontrast    float32
-	prepeat      int32
 	pz           int32
 	pscale       float32
 	ppersistance float32
@@ -69,10 +69,10 @@ func main() {
 		// perlin
 		useperlin:    true,
 		poctaves:     1,
+		presolution:  10,
 		pbrightness:  0,
 		pcontrast:    0.5,
-		prepeat:      2,
-		pz:           0,
+		pz:           1,
 		pscale:       1,
 		ppersistance: 1,
 		// worley
@@ -133,7 +133,7 @@ func main() {
 		if gamegui.BeginWindow("Options", 0, 0, 250, float32(HEIGHT)) {
 			if gamegui.BeginGroup("Perlin", 350) {
 				gamegui.Checkbox("Use Perlin", &state.useperlin)
-				gamegui.SliderInt32("Repeat", &state.prepeat, 1, 10, 1)
+				gamegui.SliderInt32("Resolution", &state.presolution, 1, 1024, 1)
 				gamegui.SliderInt32("Z", &state.pz, 0, 1024, 1)
 				gamegui.Label("Fbm")
 				gamegui.SliderInt32("Octaves", &state.poctaves, 1, 5, 1)

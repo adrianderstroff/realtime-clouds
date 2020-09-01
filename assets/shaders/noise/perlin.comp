@@ -7,6 +7,7 @@ layout(std430, binding = 1) buffer Permutations { int uP[]; };
 
 uniform int   uWidth;
 uniform int   uHeight;
+uniform int   uResolution;
 
 uniform int   uOctaves;
 uniform float uScale;
@@ -27,13 +28,23 @@ float fade(float t) {
 }
 
 float grad(int hash, float x, float y, float z) {
-	int h = hash & 15;                      
+	// 15 is 0b00001111 thus we take the first 4 bytes from the hash
+	int h = hash & 15;
 	
+	// 8 is 0b000010000 so we check if the most significant bit is 0. if this is the case then choose x, else choose y
 	float u = (h < 8) ? x : y;
-	u = ((h&1) == 0) ? u : -u;
 
-	float v = (h < 4) ? y : (((h==12) || (h==14)) ? x : z);
-    v = ((h&2) == 0) ? v : -v;
+	// 4 is 0b000001000 so we check if the two most significant bits are 0. if this is the case then choose y, if the
+	// first two significant bits are 1 (in case of 12 0b1100 and 4 0b1110) use x, if the first two most significant
+	// bits are unequal then use z
+	//float v = (h < 4) ? y : (((h==12) || (h==14)) ? x : z);
+    
+	float v = (h < 4) ? y : z;
+ 	v = ((h==12) || (h==14)) ? x : v;
+
+	// use the last bit to decide if u and v are positive or negative
+	u = ((h&1) == 0) ? u : -u;
+	v = ((h&2) == 0) ? v : -v;
 
 	return u + v;
 }
@@ -42,46 +53,52 @@ int p(int idx) {
 	return uP[idx];
 }
 
+int inc(int val, int repeat) {
+	return int(mod(val+1, repeat));
+}
+
 vec4 perlin(vec3 pos, float repeat) {
 	// repeat
-	pos.x = modf(pos.x, repeat);
-	pos.y = modf(pos.y, repeat);
-	pos.z = modf(pos.z, repeat);
+	float xr = modf(pos.x, repeat);
+	float yr = modf(pos.y, repeat);
+	float zr = modf(pos.z, repeat);
 
-	// get lower byte of the integer positions
-	int X = int(floor(pos.x)) & 255;                  
-    int Y = int(floor(pos.y)) & 255;                  
-    int Z = int(floor(pos.z)) & 255;
+	// get lower byte of the integer positions to the determine the unit cube we are in
+	int X = int(xr) & 255;
+    int Y = int(yr) & 255;
+    int Z = int(zr) & 255;
 
-	// get relative position within cell
-	float x = pos.x - floor(pos.x);
-    float y = pos.y - floor(pos.y);
-    float z = pos.z - floor(pos.z);
+	// get relative position within the unit cube
+	float xf = xr - trunc(xr);
+    float yf = yr - trunc(yr);
+    float zf = zr - trunc(zr);
 
-	// what are we interpolating here? TODO check algorithm
-	float u = fade(x);
-    float v = fade(y);
-    float w = fade(z);
+	// linear interpolation looks unnatural, thus use a smooth fade transition instead
+	float u = fade(xf);
+    float v = fade(yf);
+    float w = fade(zf);
 
-	// TODO also check what this does
-	int  A = p(X)   + Y;
-	int AA = p(A)   + Z;
-	int AB = p(A+1) + Z;
-    int  B = p(X+1) + Y;
-	int BA = p(B)   + Z;
-	int BB = p(B+1) + Z;
+	// determine the 8 gradient vector hashes for the 8 corner points of the current unit cube
+	int r = int(repeat);
+	int aaa = p(p(p(       X)+       Y)+       Z);
+    int aba = p(p(p(       X)+inc(Y,r))+       Z);
+    int aab = p(p(p(       X)+       Y)+inc(Z,r));
+    int abb = p(p(p(       X)+inc(Y,r))+inc(Z,r));
+    int baa = p(p(p(inc(X,r))+       Y)+       Z);
+    int bba = p(p(p(inc(X,r))+inc(Y,r))+       Z);
+    int bab = p(p(p(inc(X,r))+       Y)+inc(Z,r));
+    int bbb = p(p(p(inc(X,r))+inc(Y,r))+inc(Z,r));
 
-	// bilinear interpolations
-	float aaba1 = mix(grad(p(AA  ), x  , y  , z   ), grad(p(BA  ), x-1, y  , z   ), u);
-	float abbb1 = mix(grad(p(AB  ), x  , y-1, z   ), grad(p(BB  ), x-1, y-1, z   ), u);
-	float s = mix(aaba1, abbb1, v);
+	// bilinear interpolation in the x-y plane for the two sets of four points
+	float x1 = mix(grad(aaa, xf, yf  , zf), grad(baa, xf-1, yf  , zf), u);
+	float x2 = mix(grad(aba, xf, yf-1, zf), grad(bba, xf-1, yf-1, zf), u);
+	float y1 = mix(x1, x2, v);
+	float x3 = mix(grad(aab, xf  , yf  , zf-1 ), grad(bab, xf-1, yf  , zf-1 ), u);
+	float x4 = mix(grad(abb, xf  , yf-1, zf-1 ), grad(bbb, xf-1, yf-1, zf-1 ), u);
+	float y2 = mix(x3, x4, v);
 
-	float aaba2 = mix(grad(p(AA+1), x  , y  , z-1 ), grad(p(BA+1), x-1, y  , z-1 ), u);
-	float abbb2 = mix(grad(p(AB+1), x  , y-1, z-1 ), grad(p(BB+1), x-1, y-1, z-1 ), u);
-	float t = mix(aaba2, abbb2, v);
-
-	// trilinear interpolation
-	float res = mix(s, t, w);
+	// trilinear interpolation in z-direction for the resulting values of the bilinear interpolations
+	float res = (mix(y1, y2, w) + 1) / 2; // map result to [0,1]
 
 	return vec4(res, res, res, 1.0);
 }
@@ -89,24 +106,24 @@ vec4 perlin(vec3 pos, float repeat) {
 vec4 fbm(ivec2 pos) {
     float frequency = 1;
     float amplitude = 1;
-    float maxValue = amplitude;
-	float repeat = 1;
-	vec4 total = vec4(0);
+    float maxValue  = 0;
+	float repeat    = 512;
 
 	// normalize position between 0 and 1 
-	vec3 p3 = vec3(pos, uZ) / vec3(uWidth-1, uHeight-1, uWidth-1);
-
-	// calculate first perlin level
-    //vec4 tmp = perlin(p3, repeat);
+	vec3 p3 = vec3(pos.x, pos.y, uZ);
+	p3.x /= uResolution;
+	p3.y /= uResolution;
+	p3.z /= uResolution;
     
 	// calculate the other octaves
+	vec4 total = vec4(0);
     for(int i = 0; i < uOctaves; i++) {
-        frequency *= uScale;
-        amplitude *= uPersistance;
-        maxValue  += amplitude;
-		repeat    *= 2;
-
         total += perlin(p3 * frequency, repeat) * amplitude;
+
+		maxValue  += amplitude;
+        amplitude *= uPersistance;
+        frequency *= 2;
+		//repeat    *= 2;
     }
 
 	// normalize and clamp value
@@ -129,8 +146,4 @@ void main() {
     color = applyBrightnessContrast(color);
 
     imageStore(uPerlinTexture, pos, color);
-
-	// int x = int(float(pos.x)/(uWidth-1) * 255);
-	// vec4 dummy = vec4(p(x)/255.0, 0, 0, 1);
-	// imageStore(uPerlinTexture, pos, dummy);
 }
