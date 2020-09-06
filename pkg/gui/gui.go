@@ -118,7 +118,7 @@ func (gui *GUI) EndWindow() {
 func (gui *GUI) BeginGroup(name string, height float32) bool {
 	nk.NkLayoutRowDynamic(gui.ctx, height, 1)
 	update := nk.NkGroupBegin(gui.ctx, name, groupFlags)
-	return update > 0
+	return update != 0
 }
 
 // EndGroup ends the current group

@@ -54,13 +54,13 @@ func MakeWorley(shaderpath string) Worley {
 
 // UpdateState updates the worley noise parameters
 func (w *Worley) UpdateState(state *State) {
-	w.resolution = state.resolution
-	w.octaves = state.woctaves
-	w.radius = state.radius
-	w.brightness = state.wbrightness
-	w.contrast = state.wcontrast
-	w.scale = state.wscale
-	w.persistance = state.wpersistance
+	w.resolution = state.Wresolution
+	w.octaves = state.Woctaves
+	w.radius = state.Wradius
+	w.brightness = state.Wbrightness
+	w.contrast = state.Wcontrast
+	w.scale = state.Wscale
+	w.persistance = state.Wpersistance
 }
 
 // GenerateTexture populates the texture with a worley noise

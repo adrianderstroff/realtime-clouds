@@ -17,8 +17,6 @@ uniform float uPersistance;
 uniform float uBrightness;
 uniform float uContrast;
 
-#include "random.glsl"
-
 vec4 saturate(vec4 color) {
     return max(vec4(0), min(color, vec4(1)));
 }

@@ -1,0 +1,50 @@
+#version 430
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout(rgba32f, binding = 0) uniform readonly  image2D uTexture1;
+layout(rgba32f, binding = 1) uniform readonly  image2D uTexture2;
+layout(binding = 2) uniform writeonly image2D uTextureOut;
+
+uniform int uWidth;
+uniform int uHeight;
+uniform int uOperation;
+
+uniform float uLerpT = 0.5;
+
+float map(float val, float min1, float max1, float min2, float max2) {
+    return min2 + (val - min1) * (max2 - min2) / (max1 - min1);
+}
+
+float remap(float val1, float val2) {
+    float valout = map(val1, val2, 1.0, 0.0, 1.0);
+    return max(0.0, min(valout, 1.0));
+}
+
+vec4 performOperation(vec4 color1, vec4 color2) {
+    vec4 outColor = vec4(0);
+    
+    if(uOperation == 0) {       // Lerp
+        outColor = mix(color1, color2, uLerpT);
+    }else if(uOperation == 1) { // Multiply
+        outColor = color1 * color2;
+    }else if(uOperation == 2) { // Mapping
+        outColor.r = remap(color1.r, color2.r);
+        outColor.g = remap(color1.g, color2.g);
+        outColor.b = remap(color1.b, color2.b);
+        outColor.a = remap(color1.a, color2.a);
+    }
+
+    return outColor;
+}
+
+void main() {
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 color1 = imageLoad(uTexture1, pos);
+    vec4 color2 = imageLoad(uTexture2, pos);
+
+    vec4 outColor = performOperation(color1, color2);
+
+    imageStore(uTextureOut, pos, outColor);
+}

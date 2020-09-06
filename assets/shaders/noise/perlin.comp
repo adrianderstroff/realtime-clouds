@@ -59,14 +59,14 @@ int inc(int val, int repeat) {
 
 vec4 perlin(vec3 pos, float repeat) {
 	// repeat
-	float xr = modf(pos.x, repeat);
-	float yr = modf(pos.y, repeat);
-	float zr = modf(pos.z, repeat);
+	float xr = mod(pos.x, repeat);
+	float yr = mod(pos.y, repeat);
+	float zr = mod(pos.z, repeat);
 
-	// get lower byte of the integer positions to the determine the unit cube we are in
-	int X = int(xr) & 255;
-    int Y = int(yr) & 255;
-    int Z = int(zr) & 255;
+	// get lower byte of the integer positions to determine the unit cube we are in
+	int X = int(trunc(xr)) & 255;
+    int Y = int(trunc(yr)) & 255;
+    int Z = int(trunc(zr)) & 255;
 
 	// get relative position within the unit cube
 	float xf = xr - trunc(xr);
@@ -80,25 +80,25 @@ vec4 perlin(vec3 pos, float repeat) {
 
 	// determine the 8 gradient vector hashes for the 8 corner points of the current unit cube
 	int r = int(repeat);
-	int aaa = p(p(p(       X)+       Y)+       Z);
-    int aba = p(p(p(       X)+inc(Y,r))+       Z);
-    int aab = p(p(p(       X)+       Y)+inc(Z,r));
-    int abb = p(p(p(       X)+inc(Y,r))+inc(Z,r));
-    int baa = p(p(p(inc(X,r))+       Y)+       Z);
-    int bba = p(p(p(inc(X,r))+inc(Y,r))+       Z);
-    int bab = p(p(p(inc(X,r))+       Y)+inc(Z,r));
+	int aaa = p(p(p(    X   )+    Y   )+    Z   );
+    int aba = p(p(p(    X   )+inc(Y,r))+    Z   );
+    int aab = p(p(p(    X   )+    Y   )+inc(Z,r));
+    int abb = p(p(p(    X   )+inc(Y,r))+inc(Z,r));
+    int baa = p(p(p(inc(X,r))+    Y   )+    Z   );
+    int bba = p(p(p(inc(X,r))+inc(Y,r))+    Z   );
+    int bab = p(p(p(inc(X,r))+    Y   )+inc(Z,r));
     int bbb = p(p(p(inc(X,r))+inc(Y,r))+inc(Z,r));
 
 	// bilinear interpolation in the x-y plane for the two sets of four points
-	float x1 = mix(grad(aaa, xf, yf  , zf), grad(baa, xf-1, yf  , zf), u);
-	float x2 = mix(grad(aba, xf, yf-1, zf), grad(bba, xf-1, yf-1, zf), u);
+	float x1 = mix(grad(aaa, xf, yf  , zf  ), grad(baa, xf-1, yf  , zf  ), u);
+	float x2 = mix(grad(aba, xf, yf-1, zf  ), grad(bba, xf-1, yf-1, zf  ), u);
 	float y1 = mix(x1, x2, v);
-	float x3 = mix(grad(aab, xf  , yf  , zf-1 ), grad(bab, xf-1, yf  , zf-1 ), u);
-	float x4 = mix(grad(abb, xf  , yf-1, zf-1 ), grad(bbb, xf-1, yf-1, zf-1 ), u);
+	float x3 = mix(grad(aab, xf, yf  , zf-1), grad(bab, xf-1, yf  , zf-1), u);
+	float x4 = mix(grad(abb, xf, yf-1, zf-1), grad(bbb, xf-1, yf-1, zf-1), u);
 	float y2 = mix(x3, x4, v);
 
 	// trilinear interpolation in z-direction for the resulting values of the bilinear interpolations
-	float res = (mix(y1, y2, w) + 1) / 2; // map result to [0,1]
+	float res = (mix(y1, y2, w) + 1) / 2.0; // map result to [0,1]
 
 	return vec4(res, res, res, 1.0);
 }
@@ -107,7 +107,7 @@ vec4 fbm(ivec2 pos) {
     float frequency = 1;
     float amplitude = 1;
     float maxValue  = 0;
-	float repeat    = 512;
+	float repeat    = float(uWidth)/uResolution;
 
 	// normalize position between 0 and 1 
 	vec3 p3 = vec3(pos.x, pos.y, uZ);
@@ -118,12 +118,11 @@ vec4 fbm(ivec2 pos) {
 	// calculate the other octaves
 	vec4 total = vec4(0);
     for(int i = 0; i < uOctaves; i++) {
-        total += perlin(p3 * frequency, repeat) * amplitude;
+        total += perlin(p3 * frequency, repeat * frequency) * amplitude;
 
 		maxValue  += amplitude;
         amplitude *= uPersistance;
         frequency *= 2;
-		//repeat    *= 2;
     }
 
 	// normalize and clamp value
@@ -147,3 +146,37 @@ void main() {
 
     imageStore(uPerlinTexture, pos, color);
 }
+
+
+// vec4 dummy(vec3 pos, float repeat) {
+// 	// repeat
+// 	float xr = mod(pos.x, repeat);
+// 	float yr = mod(pos.y, repeat);
+// 	float zr = mod(pos.z, repeat);
+
+// 	// get lower byte of the integer positions to determine the unit cube we are in
+// 	int X = int(xr) & 255;
+//     int Y = int(yr) & 255;
+//     int Z = int(zr) & 255;
+
+// 	//return vec4(float(X)/255.0, float(Y)/255.0, float(Z)/255.0, 1.0);
+
+// 	return vec4(float(X)/255.0, float(Y)/255.0, float(Z)/255.0, 1.0);
+
+// 	//return vec4(xr, yr, zr, 1.0);
+// }
+
+// void main() {
+//     ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+
+// 	vec3 posf = vec3(pos.x, pos.y, uZ);
+// 	// posf.x /= float(uResolution);
+// 	// posf.y /= float(uResolution);
+// 	// posf.z /= float(uResolution);
+
+//     vec4 color = dummy(posf, 1024);
+	
+//     //color = applyBrightnessContrast(color);
+
+//     imageStore(uPerlinTexture, pos, color);
+// }
