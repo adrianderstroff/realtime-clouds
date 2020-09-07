@@ -39,14 +39,17 @@ type State struct {
 	Woctaves     int32
 	Wresolution  int32
 	Wradius      float32
+	Wradiusscale float32
 	Wbrightness  float32
 	Wcontrast    float32
 	Wscale       float32
 	Wpersistance float32
 	// post processing
-	Operation1 int32
-	Operation2 int32
-	Threshold  float32
+	Operation1  int32
+	Operation2  int32
+	Threshold   float32
+	SaveTexture bool
+	SaveVolume  bool
 }
 
 // initializeState sets the state with initial values
@@ -66,14 +69,17 @@ func initializeState() *State {
 		Woctaves:     1,
 		Wresolution:  16,
 		Wradius:      70,
+		Wradiusscale: 1,
 		Wbrightness:  0,
 		Wcontrast:    0.5,
 		Wscale:       1,
 		Wpersistance: 1,
 		// general
-		Operation1: 0,
-		Operation2: 0,
-		Threshold:  0.5,
+		Operation1:  0,
+		Operation2:  0,
+		Threshold:   0.5,
+		SaveTexture: false,
+		SaveVolume:  false,
 	}
 	return state
 }
@@ -195,10 +201,11 @@ func main() {
 				gamegui.SliderFloat32("Contrast", &state.Pcontrast, 0, 1, 0.01)
 				gamegui.EndGroup()
 			}
-			if gamegui.BeginGroup("Worley", 360) {
+			if gamegui.BeginGroup("Worley", 350) {
 				gamegui.Checkbox("Use Worley", &state.Useworley)
 				gamegui.SliderInt32("Resolution", &state.Wresolution, 1, 64, 1)
 				gamegui.SliderFloat32("Radius", &state.Wradius, 0, 200, 0.1)
+				//gamegui.SliderFloat32("Radius Scale", &state.Wradiusscale, 0.1, 2, 0.1)
 				gamegui.Label("Fbm")
 				gamegui.SliderInt32("Octaves", &state.Woctaves, 1, 5, 1)
 				gamegui.SliderFloat32("Scale", &state.Wscale, 1, 3, 0.01)
@@ -208,10 +215,12 @@ func main() {
 				gamegui.SliderFloat32("Contrast", &state.Wcontrast, 0, 1, 0.01)
 				gamegui.EndGroup()
 			}
-			if gamegui.BeginGroup("Post Process", 150) {
+			if gamegui.BeginGroup("Post Process", 205) {
 				gamegui.Selector("Merge Op1", operations, &state.Operation1)
 				gamegui.Selector("Merge Op2", operations, &state.Operation2)
 				gamegui.SliderFloat32("Threshold", &state.Threshold, 0, 1, 0.01)
+				gamegui.Button("Save Texture", &state.SaveTexture)
+				gamegui.Button("Save Volume", &state.SaveVolume)
 				gamegui.EndGroup()
 			}
 		}

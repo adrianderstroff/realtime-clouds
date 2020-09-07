@@ -15,6 +15,7 @@ type Worley struct {
 	resolution    int32
 	octaves       int32
 	radius        float32
+	radiusscale   float32
 	// fbm
 	scale       float32
 	persistance float32
@@ -41,11 +42,12 @@ func MakeWorley(shaderpath string) Worley {
 		computeshader: computeshader,
 		noisetexture:  noisetexture,
 
-		width:      1024,
-		height:     1024,
-		resolution: 32,
-		octaves:    1,
-		radius:     40.0,
+		width:       1024,
+		height:      1024,
+		resolution:  32,
+		octaves:     1,
+		radius:      40.0,
+		radiusscale: 1,
 
 		brightness: 1.0,
 		contrast:   1.0,
@@ -57,6 +59,7 @@ func (w *Worley) UpdateState(state *State) {
 	w.resolution = state.Wresolution
 	w.octaves = state.Woctaves
 	w.radius = state.Wradius
+	w.radiusscale = state.Wradiusscale
 	w.brightness = state.Wbrightness
 	w.contrast = state.Wcontrast
 	w.scale = state.Wscale
@@ -74,6 +77,7 @@ func (w *Worley) GenerateTexture(tex *texture.Texture) {
 	w.computeshader.UpdateInt32("uResolution", w.resolution)
 	w.computeshader.UpdateInt32("uOctaves", w.octaves)
 	w.computeshader.UpdateFloat32("uRadius", w.radius)
+	w.computeshader.UpdateFloat32("uRadiusScale", w.radiusscale)
 	w.computeshader.UpdateFloat32("uBrightness", w.brightness)
 	w.computeshader.UpdateFloat32("uContrast", w.contrast)
 	w.computeshader.UpdateFloat32("uScale", w.scale)

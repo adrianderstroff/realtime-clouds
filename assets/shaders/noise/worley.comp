@@ -10,6 +10,7 @@ uniform int   uHeight;
 uniform int   uResolution;
 uniform int   uOctaves;
 uniform float uRadius;
+uniform float uRadiusScale;
 
 uniform float uScale;
 uniform float uPersistance;
@@ -83,6 +84,7 @@ vec4 worley(ivec2 pos, int ires) {
 
     // derive brightness from distance and invert the color
     float luminance = (min(mindist, uRadius) / uRadius);
+    luminance = clamp(luminance, 0, 1);
 
     return vec4(luminance, luminance, luminance, 1);
 }
