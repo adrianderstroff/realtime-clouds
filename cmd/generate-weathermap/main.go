@@ -49,6 +49,7 @@ type State struct {
 	Threshold  float32
 }
 
+// initializeState sets the state with initial values
 func initializeState() *State {
 	state := &State{
 		// perlin
