@@ -208,7 +208,7 @@ func main() {
 				gamegui.SliderFloat32("Contrast", &state.Wcontrast, 0, 1, 0.01)
 				gamegui.EndGroup()
 			}
-			if gamegui.BeginGroup("Post Process", 160) {
+			if gamegui.BeginGroup("Post Process", 150) {
 				gamegui.Selector("Merge Op1", operations, &state.Operation1)
 				gamegui.Selector("Merge Op2", operations, &state.Operation2)
 				gamegui.SliderFloat32("Threshold", &state.Threshold, 0, 1, 0.01)
